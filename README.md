@@ -2,6 +2,7 @@
 # ReadMe Generator Python library  
 
 The cdspyreadme library is a Python package dedicated for authors who want to submit data in VizieR or AAS.
+
 The package builts ReadMe, standardized tables (in ASCII aligned format) or MRT tables from tables which
 can be in different formats (CSV, votable, FITS, astropy table, MRT)
 
@@ -62,7 +63,7 @@ tablemaker.writeCDSTables()
 tablemaker.makeReadMe()
 ```
 
-### use astropy Masked Column to remove values according to criteria
+### use astropy Masked Column to remove values according criteria
 ```python
 from astropy.table import Table, MaskedColumn
 import cdspyreadme
@@ -78,7 +79,8 @@ tablemaker.makeReadMe()
 
 ### Sexagesimal columns
 Flag sexagesimal columns in ReadMe.
-The methods transform string columns (ie: ra_sexa, de_sexa) in columns RAh, Ram, RAs, DEsign, DEd, DEm, DEs.
+
+The method transforms string columns (ie: ra_sexa, de_sexa) in columns RAh, Ram, RAs, DEsign, DEd, DEm, DEs.
 
 ```python
 from astropy.table import Table
