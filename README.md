@@ -13,6 +13,11 @@ The cdspyreadme library works with Python3 and requires :
 - astropy
 - numpy
 
+**Notes**: for large tables, we recommend to use the C- anafile package 
+
+Anafile download: http://cdsarc.unistra.fr/ftp/sw/anafile.tar.gz
+Anafile documentation: http://cdsarc.unistra.fr/doc/anafile.htx
+
 ## Install
 python3 setup.py install --user
 
