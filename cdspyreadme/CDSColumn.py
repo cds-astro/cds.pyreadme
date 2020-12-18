@@ -11,7 +11,6 @@ import math
 UNDEFINED_UNIT = "---"
 DEFAULT_STRING_SIZE = 50
 
-
 class SexaMeta:
     """Sexa metadata"""
 
@@ -358,6 +357,8 @@ class CDSColumn:
             return int
         elif self.__column.dtype.name.startswith("f"):
             return float
+        elif self.__column.dtype.name.startswith("u"):
+            return int
         elif self.__column.dtype.name.startswith("s"):
             return str
 
@@ -367,11 +368,11 @@ class CDSColumn:
 
         for value in self.__column:
             if value is None: continue
+            if isinstance(value, numpy.ma.core.MaskedConstant): continue
             if isinstance(value, (int, numpy.integer)):
                 return int
             elif numpy.isreal(value):
                 return float
-
             else:
                 return str
         return str
