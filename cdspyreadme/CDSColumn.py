@@ -287,7 +287,6 @@ class CDSColumn:
             raise Exception("column must be astropy.table.Column")
 
         self.name = column.name
-        self.name = column.name
         self.size = None
         self.hasNull = None
         self.description = "Description of " + self.name
@@ -297,6 +296,28 @@ class CDSColumn:
         self.__dbname = column.name
         self.__column = column
         self.__sexa = [None, None]
+        self.__force_format = None
+
+    def set_format(self, fmt):
+        """force a format (fortran format)
+        :param fmt: the new format (ex:  %F10.6)
+        """
+        mo = re.match("^F([0-9]+)[.]([0-9]+)", fmt)
+        if mo :
+            f = "{0}.{1}f".format(mo.group(1),mo.group(2))
+            self.__force_fmt = [int(mo.group(1)), "%"+f, fmt, "{0:"+f+"}"]
+            return
+
+        mo = re.match("^([IA])([0-9]+)", fmt)
+        if mo :
+            if mo.group(1) == "I":
+                f =  "{}d".format(mo.group(2))
+            else:
+                f =  "{}s".format(mo.group(2))
+            self.__force_format = [int(mo.group(2)), "%"+f, fmt, "{0:"+f+"}"]
+            return 
+            
+        raise Exception("format {} not accepted".format(fmt))
 
 
     #def get_value(self, i):
@@ -351,6 +372,13 @@ class CDSColumn:
         self.size = self.formatter.size
         self.min = self.formatter.min
         self.max = self.formatter.max
+        
+        if self.__force_format:
+            self.size = self.__force_format[0]
+            self.formatter.size = self.__force_format[0]
+            self.formatter.format = self.__force_format[1]
+            self.formatter.fortran_format = self.__force_format[2]
+            self.formatter.out_format = self.__force_format[3]
 
     def __get_type(self):
         if self.__column.dtype.name.startswith("i"):
@@ -471,3 +499,6 @@ class CDSColumn:
         :return: tehe value formated (ready fo ASCII aligned format)
         """
         return self.formatter.write(self.__column[nrec])
+
+    def __str__(self):
+        return "<CDSColumn name={0}>".format(self.name)

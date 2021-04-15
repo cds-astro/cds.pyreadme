@@ -203,7 +203,6 @@ class CDSFileTable(CDSTable):
             raise CDSException("input is not a Table name")
 
         self.__filename = table
-        print(os.getcwd())
         self.table = ascii.read(self.__filename, data_start=data_start)
         CDSTable.__init__(self, self.table)
 

@@ -15,8 +15,8 @@ The cdspyreadme library works with Python3 and requires :
 
 **Notes**: for large tables, we recommend to use the C- anafile package 
 
-- Anafile download: http://cdsarc.unistra.fr/ftp/sw/anafile.tar.gz
-- Anafile documentation: http://cdsarc.unistra.fr/doc/anafile.htx
+Anafile download: http://cdsarc.unistra.fr/ftp/sw/anafile.tar.gz
+Anafile documentation: http://cdsarc.unistra.fr/doc/anafile.htx
 
 ## Install
 python3 setup.py install --user
@@ -138,3 +138,19 @@ table = tablemaker.addTable(ascii, name='table.mrt', description='csv file')
 tablemaker.toMRT()
 ```
 
+### update column
+...
+```python
+table = tablemaker.addTable(...)
+column = table.get_column("ra")
+
+# modify format
+column.set_format("F10.6")
+
+# modify name and description
+column.name="raj2000"
+column.description="right ascension in ICRS"
+
+tablemaker.writeCDSTables()
+tablemaker.makeReadMe()
+```
