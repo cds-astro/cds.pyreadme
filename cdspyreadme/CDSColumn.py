@@ -302,23 +302,34 @@ class CDSColumn:
         """force a format (fortran format)
         :param fmt: the new format (ex:  %F10.6)
         """
+        formater = CDSColumnFormatter()
+        formater.fortran_format = fmt
+
         mo = re.match("^F([0-9]+)[.]([0-9]+)", fmt)
         if mo :
             f = "{0}.{1}f".format(mo.group(1),mo.group(2))
-            self.__force_format = [int(mo.group(1)), "%"+f, fmt, "{0:"+f+"}"]
-            return
+            formater.size = int(mo.group(1))
+            formater.format = "%"+f
+            formater.out_format = "{0:"+f+"}"
 
-        mo = re.match("^([IA])([0-9]+)", fmt)
-        if mo :
+        else:
+            mo = re.match("^([IA])([0-9]+)", fmt)
+            if mo is None:
+                raise Exception("format {} not accepted".format(fmt))
+
             if mo.group(1) == "I":
                 f =  "{}d".format(mo.group(2))
+                formater.size = int(mo.group(2))
+                formater.format = "%"+f
+                formater.out_format = "{0:>"+mo.group(2)+"}"
             else:
                 f =  "{}s".format(mo.group(2))
-            self.__force_format = [int(mo.group(2)), "%"+f, fmt, "{0:"+f+"}"]
-            return 
-            
-        raise Exception("format {} not accepted".format(fmt))
-
+                formater.size = int(mo.group(2))
+                formater.format = "%"+f
+                formater.out_format = "{0:"+f+"}"
+ 
+        formater.none_format = "{0:"+str(formater.size)+"}"
+        self.__force_format = formater
 
     #def get_value(self, i):
     #    """Get the value for i-th record of the Column
@@ -372,12 +383,15 @@ class CDSColumn:
         self.size = self.formatter.size
         self.min = self.formatter.min
         self.max = self.formatter.max
+        print("FORMAT: "+self.formatter.out_format)
         if self.__force_format:
-            self.size = self.__force_format[0]
-            self.formatter.size = self.__force_format[0]
-            self.formatter.format = self.__force_format[1]
-            self.formatter.fortran_format = self.__force_format[2]
-            self.formatter.out_format = self.__force_format[3]
+            self.size = self.__force_format.size
+            self.formatter.size = self.__force_format.size
+            self.formatter.format = self.__force_format.format
+            self.formatter.fortran_format = self.__force_format.fortran_format
+            self.formatter.out_format = self.__force_format.out_format
+            self.formatter.none_format = self.__force_format.none_format
+            print(">>FORMAT: "+self.formatter.out_format)
 
     def __get_type(self):
         if self.__column.dtype.name.startswith("i"):
