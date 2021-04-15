@@ -305,7 +305,7 @@ class CDSColumn:
         mo = re.match("^F([0-9]+)[.]([0-9]+)", fmt)
         if mo :
             f = "{0}.{1}f".format(mo.group(1),mo.group(2))
-            self.__force_fmt = [int(mo.group(1)), "%"+f, fmt, "{0:"+f+"}"]
+            self.__force_format = [int(mo.group(1)), "%"+f, fmt, "{0:"+f+"}"]
             return
 
         mo = re.match("^([IA])([0-9]+)", fmt)
@@ -372,7 +372,6 @@ class CDSColumn:
         self.size = self.formatter.size
         self.min = self.formatter.min
         self.max = self.formatter.max
-        
         if self.__force_format:
             self.size = self.__force_format[0]
             self.formatter.size = self.__force_format[0]
