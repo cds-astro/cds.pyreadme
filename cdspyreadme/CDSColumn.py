@@ -383,7 +383,6 @@ class CDSColumn:
         self.size = self.formatter.size
         self.min = self.formatter.min
         self.max = self.formatter.max
-        print("FORMAT: "+self.formatter.out_format)
         if self.__force_format:
             self.size = self.__force_format.size
             self.formatter.size = self.__force_format.size
@@ -391,7 +390,6 @@ class CDSColumn:
             self.formatter.fortran_format = self.__force_format.fortran_format
             self.formatter.out_format = self.__force_format.out_format
             self.formatter.none_format = self.__force_format.none_format
-            print(">>FORMAT: "+self.formatter.out_format)
 
     def __get_type(self):
         if self.__column.dtype.name.startswith("i"):
