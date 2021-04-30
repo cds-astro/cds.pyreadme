@@ -2,7 +2,6 @@
    G.Landais (CDS) 28 nov 2015
    CDSColumn, used to Generate ReadMe and CDS standardized tables (in ASCII aligned columns)
 """
-
 import numpy
 import re
 import logging
@@ -102,8 +101,10 @@ class CDSColumnIntegerFormatter(CDSColumnFormatter):
             mcol = column  # MaskedColumn(column, mask=[col is None for col in column])
             mcol.fill_value = -999999
             self.max = max(mcol.filled())
+            if self.max == -999999: self.max = None
             mcol.fill_value = +999999
             self.min = min(mcol.filled())
+            if self.min == 999999: self.min = None
         else:
             self.max = max(column)
             self.min = min(column)
@@ -202,8 +203,10 @@ class CDSColumnFloatFormatter(CDSColumnFormatter):
             mcol = column  # MaskedColumn(column, mask=[col is None for col in column])
             mcol.fill_value = -999999
             self.max = max(mcol.filled())
+            if self.max == -999999: self.max = None
             mcol.fill_value = +999999
             self.min = min(mcol.filled())
+            if self.min == 999999: self.min = None
         else:
             self.max = max(column)
             self.min = min(column)
@@ -305,12 +308,18 @@ class CDSColumn:
         formater = CDSColumnFormatter()
         formater.fortran_format = fmt
 
-        mo = re.match("^F([0-9]+)[.]([0-9]+)", fmt)
+        mo = re.match("^([EF])([0-9]+)[.]([0-9]+)", fmt)
         if mo :
-            f = "{0}.{1}f".format(mo.group(1),mo.group(2))
-            formater.size = int(mo.group(1))
-            formater.format = "%"+f
-            formater.out_format = "{0:"+f+"}"
+            if mo.group(1) == 'E':
+                f = "{0}.{1}e".format(mo.group(2), mo.group(3))
+                formater.size = int(mo.group(2))
+                formater.format = "%"+f
+                formater.out_format = "{{0:{}.{}e}}".format(mo.group(2), int(mo.group(3))-1)
+            else:
+                f = "{0}.{1}f".format(mo.group(2), mo.group(3))
+                formater.size = int(mo.group(2))
+                formater.format = "%"+f
+                formater.out_format = "{0:"+f+"}"
 
         else:
             mo = re.match("^([IA])([0-9]+)", fmt)
@@ -318,12 +327,12 @@ class CDSColumn:
                 raise Exception("format {} not accepted".format(fmt))
 
             if mo.group(1) == "I":
-                f =  "{}d".format(mo.group(2))
+                f = "{}d".format(mo.group(2))
                 formater.size = int(mo.group(2))
                 formater.format = "%"+f
                 formater.out_format = "{0:>"+mo.group(2)+"}"
             else:
-                f =  "{}s".format(mo.group(2))
+                f = "{}s".format(mo.group(2))
                 formater.size = int(mo.group(2))
                 formater.format = "%"+f
                 formater.out_format = "{0:"+f+"}"
@@ -359,10 +368,14 @@ class CDSColumn:
         if self.__column.description:
             self.description = self.__column.description
 
-        if self.__column.unit is not None:
-            self.unit = self.__column.unit
-        else:
-            self.unit = self.__get_unit()
+        if self.unit is None:
+            if self.__column.unit is not None:
+                try:
+                    self.unit = self.__column.unit.to_string("cds")
+                except:
+                    self.unit = self.__column.unit
+            else:
+                self.unit = self.__get_unit()
 
         if isinstance(self.__column, MaskedColumn) is False:
             for col in self.__column:

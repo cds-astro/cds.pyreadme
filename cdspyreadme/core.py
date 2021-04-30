@@ -203,7 +203,10 @@ class CDSFileTable(CDSTable):
             raise CDSException("input is not a Table name")
 
         self.__filename = table
-        self.table = ascii.read(self.__filename, data_start=data_start)
+        if data_start:
+            self.table = ascii.read(self.__filename, data_start=data_start)
+        else:
+            self.table = ascii.read(self.__filename) # automated search, capable to read csv header
         CDSTable.__init__(self, self.table)
 
         if name is None:
@@ -752,18 +755,19 @@ class CDSTablesMaker:
                 else:
                     nullflag = ""
 
-                if column.formatter.fortran_format[0] == 'I':
-                    if abs(column.min) < MAX_COL_INTLIMIT and abs(column.max) < MAX_COL_INTLIMIT:
-                        if column.min == column.max:
-                            description = "[{0}]{1} {2}".format(column.min, nullflag, description)
-                        else:
-                            description = "[{0}/{1}]{2} {3}".format(column.min, column.max,
-                                                                            nullflag, description)
-                elif column.formatter.fortran_format[0] == 'F':
-                    description = "[{0}/{1}]{2} {3}".format(math.floor(column.min*100)/100.,
-                                                            math.ceil(column.max*100)/100.,
-                                                            nullflag, description)
+                borne = ""
+                if column.min and column.max:
+                    if column.formatter.fortran_format[0] == 'I':
+                        if abs(column.min) < MAX_COL_INTLIMIT and abs(column.max) < MAX_COL_INTLIMIT:
+                            if column.min == column.max:
+                                borne = "[{0}]".format(column.min)
+                            else:
+                                borne = "[{0}/{1}]".format(column.min, column.max)
+                    elif column.formatter.fortran_format[0] in ('E','F'):
+                        borne = "[{0}/{1}]".format(math.floor(column.min*100)/100.,
+                                                   math.ceil(column.max*100)/100.)
 
+                description = "{0}{1} {2}".format(borne, nullflag, description)
                 newline = fmtb.format(startb, endb, "",
                                       self.__strFmt(column.formatter.fortran_format),
                                       self.__strFmt(column.unit),
