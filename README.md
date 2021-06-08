@@ -28,7 +28,7 @@ import cdspyreadme
 tablemaker = cdspyreadme.CDSTablesMaker()
 
 # add a table
-table = tablemaker.addTable("file.csv", description="my CSV table")
+table = tablemaker.addTable("table.csv", description="my CSV table")
 # write table in CDS-ASCII aligned format (required)
 tablemaker.writeCDSTables()
 
@@ -74,7 +74,7 @@ from astropy.table import Table, MaskedColumn
 import cdspyreadme
 
 tablemaker = cdspyreadme.CDSTablesMaker()
-csv = Table.read("file.csv")
+csv = Table.read("table.csv")
 csv.columns[0] = MaskedColumn(csv.columns[0], mask=[(val>10) for val in csv.columns[0]])
 tablemaker.addTable(csv, name="data.cds")
 
@@ -92,7 +92,7 @@ from astropy.table import Table
 import cdspyreadme
 
 tablemaker = cdspyreadme.CDSTablesMaker()
-csv = Table.read("file.csv")
+csv = Table.read("table.csv")
 table = tablemaker.addTable(csv, name="data.cds")
 ra = table.get_column("ra_sexa")
 ra.setSexaRa()
@@ -127,7 +127,7 @@ tablemaker = cdspyreadme.CDSTablesMaker()
 tablemaker.title = "catalogue title"
 tablemaker.author = 'G.Landais'
 
-csv = Table.read("file.csv")
+csv = Table.read("table.csv")
 # rename columns
 colra = csv["ra"]
 colra.name = "RAdeg"
