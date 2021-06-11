@@ -9,7 +9,7 @@ from cdspyreadme.__init__ import __version__
 version = __version__
 
 setuptools.setup(
-    name="gilles.landais", # Replace with your own username
+    name="cdspyreadme", # Replace with your own username
     version=version,
     author="Gilles Landais (CDS)",
     url='https://github.com/cds-astro/cds.pyreadme',
@@ -29,7 +29,6 @@ setuptools.setup(
     include_package_data=True,
     python_requires='>=3.6',
     install_requires=['astropy>=3.2',
-                      'numpy>=1.17.2',
-                      'logging'
+                      'numpy>=1.17.2'
                      ],
 )

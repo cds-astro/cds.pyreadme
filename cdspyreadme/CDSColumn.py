@@ -368,7 +368,7 @@ class CDSColumn:
         if self.__column.description:
             self.description = self.__column.description
 
-        if self.unit is None:
+        if self.unit is None or self.unit == UNDEFINED_UNIT:
             if self.__column.unit is not None:
                 try:
                     self.unit = self.__column.unit.to_string("cds")

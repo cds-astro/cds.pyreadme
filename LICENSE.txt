@@ -1,6 +1,6 @@
 License: BSD License 2.0
 
-Copyright (c) 2021, CDS (Data Center of Strasbourg)
+Copyright (c) <year>, <copyright holder>
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
