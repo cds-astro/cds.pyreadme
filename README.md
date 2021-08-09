@@ -154,3 +154,28 @@ column.description="right ascension in ICRS"
 tablemaker.writeCDSTables()
 tablemaker.makeReadMe()
 ```
+#### FITS update 
+How to add columns description using TCOMMx cards -
+
+```python
+from astropy.io import fits
+from astropy.table import Table
+import cdspyreadme
+
+tab = Table.read("catalogue.fits")
+fitstable = fits.open("catalogue.fits")
+hdu = fitstable[1]
+
+# update description from FITS header
+for i in range(len(tab.columns)):
+    tab.columns[i].description = hdu.header["TCOMM"+str(i+1)]
+fits.close()
+
+tablemaker = cdspyreadme.CDSTablesMaker()
+table = tablemaker.addTable(tab)
+
+tablemaker = cdspyreadme.CDSTablesMaker()
+table = tablemaker.addTable(tab)
+tablemaker.writeCDSTables()
+```
+
