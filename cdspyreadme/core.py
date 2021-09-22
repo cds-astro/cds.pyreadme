@@ -682,13 +682,14 @@ class CDSTablesMaker:
         # are not separate
         new_line = fill(line, width=MAX_SIZE_README_LINE, subsequent_indent=shift * " ").replace("!", " ")
 
+        if len(new_line) == 0:
+            return self.author
         if self.author:
-            if len(new_line)>0:
-                return self.author+", "+new_line
-            else:
-                return self.author
+            firstauthor = re.sub(r" *[+]$", "" , self.author)
+            if new_line.strip().find(firstauthor) != 0:
+                return firstauthor+", "+new_line
         return new_line
-
+ 
     def __add_keywords(self, line, shift=0):
         """Split the line containing the authors without separate given and surname
         :param line: keywords list in a line
