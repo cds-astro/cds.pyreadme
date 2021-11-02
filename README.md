@@ -174,8 +174,6 @@ fits.close()
 tablemaker = cdspyreadme.CDSTablesMaker()
 table = tablemaker.addTable(tab)
 
-tablemaker = cdspyreadme.CDSTablesMaker()
-table = tablemaker.addTable(tab)
 tablemaker.writeCDSTables()
 ```
 
