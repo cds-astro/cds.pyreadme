@@ -305,6 +305,9 @@ class CDSMRTTable(CDSTable):
         :param description: description
         :param set_limit: add limits to the byte-by-byte description
         """
+        if tableout is None:
+            tableout = tablein.replace("mrt", "").replace(".txt", "") + ".dat"
+
         CDSTable.__init__(self, tableout)
 
         self.name = tableout
@@ -314,8 +317,6 @@ class CDSMRTTable(CDSTable):
         self.__begin_data = -1
 
         self.__tablename = tablein
-        if tableout is None:
-            self.__tablename_cds = tablein.replace("mrt", "").replace(".txt", "") + ".dat"
         self.__tablename_cds = tableout
 
         self.__linewidth = -1
@@ -337,11 +338,12 @@ class CDSMRTTable(CDSTable):
 
     def __parseTable(self):
         num = 0
-        linewidth = "0"
-        regbbb = re.compile("^\s*[0-9]*[ -]+([0-9]*)\s+[A-Z][0-9.]+\s+.*$")
-        regsep = re.compile("^[-]+$")
-        regnot = re.compile("^\s*Note *[(][0-9]+[)].*")
-        regtit = re.compile("^\s*Table\s*:\s(.*)\s*$")
+        line_width = "0"
+        reg_bbb = re.compile("^\s*[0-9]*[ -]+([0-9]*)\s+[A-Z][0-9.]+\s+.*$")
+        reg_sep = re.compile("^[-]+$")
+        reg_not = re.compile("^Note *[(][0-9]+[)].*")
+        reg_tit = re.compile("^\s*Table\s*:\s(.*)\s*$")
+        reg_bbb_head = re.compile("^ *Bytes *Format .*$")
 
         status = 0
         fd = open(self.__tablename, "r")
@@ -351,7 +353,7 @@ class CDSMRTTable(CDSTable):
                 continue
 
             if status == 0:
-                mo = regtit.match(line)
+                mo = reg_tit.match(line)
                 if mo:
                     if len(mo.group(1).strip()) > 1:
                         self.description = mo.group(1)
@@ -367,27 +369,31 @@ class CDSMRTTable(CDSTable):
                 continue
 
             elif status == 1:
-                # continue until byte-by-bytes begining
-                mo = regbbb.match(line)
+                # continue until byte-by-bytes beginning
+                mo = reg_bbb.match(line)
                 if mo:
                     status = 2
                 else:
+                    if reg_sep.match(line) or reg_bbb_head.match(line):
+                        continue
                     self.__bbb += line
                     continue
 
             if status == 2:
                 # byte-by-bytes
-                mo = regsep.match(line)
+                mo = reg_sep.match(line)
                 if mo:
                     status = 3
-                mo = regbbb.match(line)
+                    continue
+                mo = reg_bbb.match(line)
                 if mo:
-                    linewidth = mo.group(1)
+                    line_width = mo.group(1)
+
                 self.__bbb += line
 
             elif status == 3:
                 # notes -
-                mo = regnot.match(line);
+                mo = reg_not.match(line);
                 if mo:
                     self.notes.append(line)
                     continue
@@ -396,7 +402,7 @@ class CDSMRTTable(CDSTable):
                     self.__begin_data = num
                     continue
 
-                mo = regsep.match(line)
+                mo = reg_sep.match(line)
                 if mo:
                     status = 4
                     continue
@@ -413,7 +419,7 @@ class CDSMRTTable(CDSTable):
 
         # print (self.__bbb)
         self.nlines = int(num) - int(self.__begin_data) + 1
-        self.__linewidth = int(linewidth)
+        self.__linewidth = int(line_width)
 
     def __bytebybytes_statistics(self):
         self.table = ascii.read(self.__tablename)
@@ -674,20 +680,29 @@ class CDSTablesMaker:
         # Find all spaces followed by authors's initials
         space_letter_list = re.findall(" (?:[A-Z]\.-?)+", line)
 
+        new_line = None
+        if self.author:
+            firstauthor = re.sub(r" *[+]$", "" , self.author)
+            if len(line) == 0: line = ""
+            if line.strip().find(firstauthor) > 0:
+                new_line = line
+            else:
+                new_line = firstauthor+", "+line
+        else:
+            new_line = line
+
         # Replace founded spaces by !
         for space_letter in space_letter_list:
             line = line.replace(space_letter, "!" + space_letter.strip())
 
         # Wrap the text by using spaces as breakpoint and then replace ! by spaces so given name and surname
         # are not separate
-        new_line = fill(line, width=MAX_SIZE_README_LINE, subsequent_indent=shift * " ").replace("!", " ")
+        if shift:
+            new_line = shift*" "+new_line
+        new_line = fill(new_line, width=MAX_SIZE_README_LINE, subsequent_indent=shift * " ").replace("!", " ")
 
-        if len(new_line) == 0:
-            return self.author
-        if self.author:
-            firstauthor = re.sub(r" *[+]$", "" , self.author)
-            if new_line.strip().find(firstauthor) != 0:
-                return firstauthor+", "+new_line
+        if shift:
+            return new_line[shift:]
         return new_line
  
     def __add_keywords(self, line, shift=0):
@@ -697,12 +712,18 @@ class CDSTablesMaker:
         :return: keywods formatted string
         """
         # Replace all spaces that are NOT precede by ; with !
-        line = re.sub("(?<!;) ", "!", line)
+        line = re.sub("(?<!;) ", "! ", line)
 
         # Wrap the text by using spaces as breakpoint and then replace ! by spaces so there is no break line
         # between two ;
-        new_line = fill(line, width=MAX_SIZE_README_LINE, subsequent_indent=shift * " ").replace("!", " ")
+        new_line = ""
+        if shift:
+            new_line = " "*shift+line
+        new_line = fill(new_line, width=MAX_SIZE_README_LINE,
+                        subsequent_indent=shift * " ").replace("!", "")
 
+        if shift:
+            return new_line[shift:]
         return new_line
 
     def printByteByByte(self, table, outBuffer=False):
@@ -712,7 +733,7 @@ class CDSTablesMaker:
         """
         if isinstance(table, CDSMRTTable):
             buff = table.getByteByByte()
-            if table.notes != None:
+            if table.notes != None and len(table.notes) > 0:
                 buff += "-" * 80 + "\n"
                 for line in table.notes:
                     try:
@@ -721,7 +742,7 @@ class CDSTablesMaker:
                         self.logger.error("error detected in Notes " + str(err))
                         buff += "?" * len(line) + "\n"
                     buff += "\n"
-                buff += "-" * 80 + "\n"
+                #buff += "-" * 80 + "\n"
 
             if outBuffer: return buff
             sys.stdout.write(buff)
@@ -812,7 +833,7 @@ class CDSTablesMaker:
 
     def putRef(self, catname, title=""):
         """Put a reference.
-        :param catname: catalgogue name (string)
+        :param catname: catalogue name (string)
         :param title: the title (string)
         """
         if self.ref is None: self.ref = []
@@ -831,7 +852,8 @@ class CDSTablesMaker:
 
         # Write references and align the double dot symbols
         for ref in self.ref:
-            buf += self.__splitLine(" {0:<{max}} : {1}".format(ref[0], ref[1], max=max_len)) + "\n"
+            #buf += self.__splitLine(" {0:<{max}} : {1}".format(ref[0], ref[1], max=max_len), shift=max_len+3) + "\n"
+            buf += " {0:<{max}} : {1}\n".format(ref[0], ref[1], max=max_len)
 
         if outBuffer is True: return buf
         sys.stdout.write(buf)
@@ -847,7 +869,7 @@ class CDSTablesMaker:
                          'abstract': self.__splitLine(self.abstract, shift=2),
                          'authors': self.__add_authors(self.authors, shift=4),
                          'bibcode': "=" + self.bibcode,
-                         'keywords': self.__add_keywords(self.keywords, shift=len("keywords: ")),
+                         'keywords': self.__add_keywords(self.keywords, shift=len("Keywords: ")),
                          'tablesIndex': self.printTablesIndex(outBuffer=True),
                          'seealso': self.printRef(outBuffer=True),
                          'bytebybyte': '',
