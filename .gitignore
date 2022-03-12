@@ -1,0 +1,6 @@
+# Mac OSX stuff
+.DS_Store
+
+# Python dev stuff
+__pycache__
+*.egg_info
