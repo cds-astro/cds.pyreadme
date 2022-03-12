@@ -13,7 +13,7 @@ The cdspyreadme library works with Python3 and requires :
 - astropy
 - numpy
 
-**Notes**: for large tables, we recommend to use the C- anafile package 
+**Notes**: for large tables, we recommend to use the C- anafile package
 
 Anafile download: http://cdsarc.unistra.fr/ftp/sw/anafile.tar.gz
 Anafile documentation: http://cdsarc.unistra.fr/doc/anafile.htx
@@ -37,6 +37,7 @@ tablemaker.title = "catalogue title"
 tablemaker.author = 'G.Landais'
 tablemaker.date = 2020
 tablemaker.abstract = "This is my abstract..."
+tablemaker.description = "This is my description..."
 tablemaker.putRef("II/246", "2mass catalogue")
 tablemaker.putRef("http://...", "external link")
 
@@ -60,7 +61,7 @@ astropy_table = Table([(1.4845, 1.4835, -1.234),
 tablemaker = cdspyreadme.CDSTablesMaker()
 tablemaker.addTable(astropy_table, name="table1")
 
-# add an other local table (in VOTable) 
+# add an other local table (in VOTable)
 table2 = Table.read("table.vot")
 tablemaker.addTable(table2, name="table2")
 
@@ -117,7 +118,7 @@ tablemaker.makeReadMe()
 ```
 
 ## MRT example
-The following example builds MRT table from a CSV table 
+The following example builds MRT table from a CSV table
 
 ```python
 from astropy.table import Table
@@ -154,7 +155,7 @@ column.description="right ascension in ICRS"
 tablemaker.writeCDSTables()
 tablemaker.makeReadMe()
 ```
-#### FITS update 
+#### FITS update
 How to add columns description using TCOMMx cards -
 
 ```python
@@ -176,4 +177,3 @@ table = tablemaker.addTable(tab)
 
 tablemaker.writeCDSTables()
 ```
-

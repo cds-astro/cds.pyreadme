@@ -79,7 +79,7 @@ class CDSTable:
     def makeCDSTable(self, fd=None, path=Path('.')):
         """Make the standardized table in ASCII aligned format.
         :param fd: file descriptor (by default, the methods creates a new file with CDSTable.name)
-        :param path: pathlib.Path to the save location. Defaults to None='.'
+        :param path: pathlib.Path to the save location. Defaults to Path('.')
         """
         for col in self.__cds_columns:
             col.parse()
@@ -534,7 +534,7 @@ class CDSTablesMaker:
         self.catalogue = ''
         self.date = 'Date ?'
         self.abstract = 'Abstract ?'
-        self.description = 'Desciption ?'
+        self.description = 'Description ?'
         self.authors = 'Authors ?'
         self.bibcode = 'ref ?'
         self.keywords = ''
