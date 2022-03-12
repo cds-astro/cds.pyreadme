@@ -3,6 +3,7 @@
    Generate ReadMe and CDS standardized tables (in ASCII aligned columns)
 """
 
+from pathlib import Path
 from astropy.io import ascii
 from astropy.table import Table
 from cdspyreadme.CDSColumn import CDSColumn
@@ -75,9 +76,10 @@ class CDSTable:
                 fo.write(" " + self.__cds_columns[i].value(nrec))
             fo.write("\n")
 
-    def makeCDSTable(self, fd=None):
+    def makeCDSTable(self, fd=None, path=Path('.')):
         """Make the standardized table in ASCII aligned format.
         :param fd: file descriptor (by default, the methods creates a new file with CDSTable.name)
+        :param path: pathlib.Path to the save location. Defaults to None='.'
         """
         for col in self.__cds_columns:
             col.parse()
@@ -85,7 +87,7 @@ class CDSTable:
                 col.set_null_value(self.nullvalue)
 
         if fd is None:
-            fd = open(self.name, "w") #, buffering=2048)
+            fd = open(path / self.name, "w") #, buffering=2048)
         self.__writeTable(fd)
         fd.close()
 
@@ -429,7 +431,7 @@ class CDSMRTTable(CDSTable):
         columns = self.get_column()
         for col in columns:
             col.parse()
-            
+
         regbbb = re.compile("^(\s*[\d \-]*\d\s+[A-Z][0-9.]*\s+[^\s]+\s+[^\s]+\s+)(.*$)$")
 
         ncol = 0
@@ -532,6 +534,7 @@ class CDSTablesMaker:
         self.catalogue = ''
         self.date = 'Date ?'
         self.abstract = 'Abstract ?'
+        self.description = 'Desciption ?'
         self.authors = 'Authors ?'
         self.bibcode = 'ref ?'
         self.keywords = ''
@@ -572,11 +575,12 @@ class CDSTablesMaker:
         cdstable.nullvalue = nullvalue
         return cdstable
 
-    def writeCDSTables(self):
+    def writeCDSTables(self, path=Path('.')):
         """Write tables in ASCII format
+        :param path: pathlib.Path to save location. Defaults to Path('.')
         """
         for table in self.__tables:
-            table.makeCDSTable()
+            table.makeCDSTable(path=path)
             self.logger.debug("make CDS table " + table.name)
 
     def getTablesInfo(self):
@@ -704,7 +708,7 @@ class CDSTablesMaker:
         if shift:
             return new_line[shift:]
         return new_line
- 
+
     def __add_keywords(self, line, shift=0):
         """Split the line containing the authors without separate given and surname
         :param line: keywords list in a line
@@ -867,6 +871,7 @@ class CDSTablesMaker:
                          'author': self.author,
                          'date': self.date,
                          'abstract': self.__splitLine(self.abstract, shift=2),
+                         'description': self.__splitLine(self.description, shift=2),
                          'authors': self.__add_authors(self.authors, shift=4),
                          'bibcode': "=" + self.bibcode,
                          'keywords': self.__add_keywords(self.keywords, shift=len("Keywords: ")),

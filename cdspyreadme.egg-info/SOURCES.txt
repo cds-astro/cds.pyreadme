@@ -1,0 +1,16 @@
+LICENSE.txt
+README.md
+pyproject.toml
+setup.py
+cdspyreadme/CDSColumn.py
+cdspyreadme/MRT.template
+cdspyreadme/ReadMe.template
+cdspyreadme/__init__.py
+cdspyreadme/bytebybyte.template
+cdspyreadme/core.py
+cdspyreadme/core_test.py
+cdspyreadme.egg-info/PKG-INFO
+cdspyreadme.egg-info/SOURCES.txt
+cdspyreadme.egg-info/dependency_links.txt
+cdspyreadme.egg-info/requires.txt
+cdspyreadme.egg-info/top_level.txt
