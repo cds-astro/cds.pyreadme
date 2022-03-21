@@ -37,6 +37,7 @@ tablemaker.title = "catalogue title"
 tablemaker.author = 'G.Landais'
 tablemaker.date = 2020
 tablemaker.abstract = "This is my abstract..."
+tablemaker.more_description = "Additional information of the data context."
 tablemaker.putRef("II/246", "2mass catalogue")
 tablemaker.putRef("http://...", "external link")
 
@@ -154,6 +155,7 @@ column.description="right ascension in ICRS"
 tablemaker.writeCDSTables()
 tablemaker.makeReadMe()
 ```
+
 #### FITS update 
 How to add columns description using TCOMMx cards -
 
@@ -174,6 +176,7 @@ fits.close()
 tablemaker = cdspyreadme.CDSTablesMaker()
 table = tablemaker.addTable(tab)
 
+tablemaker = cdspyreadme.CDSTablesMaker()
+table = tablemaker.addTable(tab)
 tablemaker.writeCDSTables()
 ```
-

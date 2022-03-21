@@ -528,12 +528,13 @@ class CDSTablesMaker:
             sys.stdout = open(out, 'w')
 
         self.title = 'Title ?'
-        self.author = '1st author ?'
+        self.author = 'First author ?'
         self.catalogue = ''
-        self.date = 'Date ?'
-        self.abstract = 'Abstract ?'
+        self.date = 'Publication date ?'
+        self.abstract = 'Description of scientific results derived from the data.'
+        self.more_description = 'Optional description of the data context (instrumentation used, observing conditions, etc...).'
         self.authors = 'Authors ?'
-        self.bibcode = 'ref ?'
+        self.bibcode = 'References ?'
         self.keywords = ''
         self.ref = None
         self.__templatevalue = None
@@ -867,6 +868,7 @@ class CDSTablesMaker:
                          'author': self.author,
                          'date': self.date,
                          'abstract': self.__splitLine(self.abstract, shift=2),
+                         'description': self.__splitLine(self.more_description, shift=2),
                          'authors': self.__add_authors(self.authors, shift=4),
                          'bibcode': "=" + self.bibcode,
                          'keywords': self.__add_keywords(self.keywords, shift=len("Keywords: ")),
