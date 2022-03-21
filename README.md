@@ -36,8 +36,8 @@ tablemaker.writeCDSTables()
 tablemaker.title = "catalogue title"
 tablemaker.author = 'G.Landais'
 tablemaker.date = 2020
-tablemaker.abstract = "This is my abstract..."
-tablemaker.description = "This is my description..."
+tablemaker.abstract = "This is my abstract. It describes the scientific results derived from the data."
+tablemaker.description = "This is my description. It describes the context of the data, like the instrumentation used or the observing conditions."
 tablemaker.putRef("II/246", "2mass catalogue")
 tablemaker.putRef("http://...", "external link")
 
