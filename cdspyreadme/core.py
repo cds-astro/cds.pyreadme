@@ -533,8 +533,9 @@ class CDSTablesMaker:
         self.author = '1st author ?'
         self.catalogue = ''
         self.date = 'Date ?'
-        self.abstract = 'Abstract ?'
-        self.description = 'Description ?'
+        self.abstract = 'Describe here the scientific results derived from the data.'
+        self.description = 'Describe here the context of the data ' + \
+            '(instrumentation used, observing conditions, etc...).'
         self.authors = 'Authors ?'
         self.bibcode = 'ref ?'
         self.keywords = ''
