@@ -685,7 +685,7 @@ class CDSTablesMaker:
         if self.author:
             firstauthor = re.sub(r" *[+]$", "" , self.author)
             if len(line) == 0: line = ""
-            if line.strip().find(firstauthor) > 0:
+            if line.strip().find(firstauthor) >= 0:
                 new_line = line
             else:
                 new_line = firstauthor+", "+line
