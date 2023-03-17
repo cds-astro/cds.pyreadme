@@ -1,5 +1,5 @@
 """
-   G.Landais (CDS) 28 nov 2015
+   i.Landais (CDS) 28 nov 2015
    Generate ReadMe and CDS standardized tables (in ASCII aligned columns)
 """
 
@@ -534,6 +534,7 @@ class CDSTablesMaker:
         self.abstract = 'Description of scientific results derived from the data.'
         self.more_description = 'Optional description of the data context (instrumentation used, observing conditions, etc...).'
         self.authors = 'Authors ?'
+        self.__authors = None
         self.bibcode = 'References ?'
         self.keywords = ''
         self.ref = None
@@ -672,39 +673,52 @@ class CDSTablesMaker:
             shift = 0
         return ("\n" + " " * shift).join(wrap(line, width=MAX_SIZE_README_LINE - shift))
 
-    def __add_authors(self, line, shift=0):
-        """Split the line containing the authors without separate given and surname
-        :param line: authors list in a line
-        :param shift: add left blank
-        :return: authors formatted string
+    def add_author(self, author):
+        """add an author
+        :param author: author name (eg: Newton I.)
         """
-        # Find all spaces followed by authors's initials
-        space_letter_list = re.findall(" (?:[A-Z]\.-?)+", line)
+        logging.debug("add author "+author)
+        if self.__authors is None:
+            self.__authors = []
+        self.__authors.append(author.strip())
 
-        new_line = None
-        if self.author:
+    def __add_authors(self, shift=0):
+        if self.__authors:
+            authors = self.__authors
+        elif self.authors:
+            authors = [ a.strip() for a in self.authors.split(",") ]
+
+        if self.author : # first author
             firstauthor = re.sub(r" *[+]$", "" , self.author)
-            if len(line) == 0: line = ""
-            if line.strip().find(firstauthor) >= 0:
-                new_line = line
-            else:
-                new_line = firstauthor+", "+line
-        else:
-            new_line = line
+            found = False
+            for a in authors:
+                if a.find(firstauthor) >= 0:
+                    found = True
+            if found is False: 
+                # add first author
+                logging.debug("add first author in authors list")
+                authors[0:0] = [firstauthor]
+                
 
-        # Replace founded spaces by !
-        for space_letter in space_letter_list:
-            line = line.replace(space_letter, "!" + space_letter.strip())
+        curlen = shift
+        curline = []
+        out = []
 
-        # Wrap the text by using spaces as breakpoint and then replace ! by spaces so given name and surname
-        # are not separate
+        for author in authors:
+            curlen += 2 + len(author)
+            if curlen > MAX_SIZE_README_LINE-1:
+                out.append(" "*shift + ", ".join(curline))
+                curlen = shift+2+len(author)
+                curline = []
+
+            curline.append(author)
+        out.append(" "*shift + ", ".join(curline))
+        outlines = ",\n".join(out)
+ 
         if shift:
-            new_line = shift*" "+new_line
-        new_line = fill(new_line, width=MAX_SIZE_README_LINE, subsequent_indent=shift * " ").replace("!", " ")
+            return outlines[shift:]
+        return outlines
 
-        if shift:
-            return new_line[shift:]
-        return new_line
  
     def __add_keywords(self, line, shift=0):
         """Split the line containing the authors without separate given and surname
@@ -743,7 +757,6 @@ class CDSTablesMaker:
                         self.logger.error("error detected in Notes " + str(err))
                         buff += "?" * len(line) + "\n"
                     buff += "\n"
-                #buff += "-" * 80 + "\n"
 
             if outBuffer: return buff
             sys.stdout.write(buff)
@@ -756,7 +769,6 @@ class CDSTablesMaker:
         if l > sz[0]:
             sz[0] = l
             sz[1] = l
-        self.logger.debug("size sz=" + str(sz))
         fmtb = "{0:" + str(sz[0]) + "d}-{1:" + str(sz[1]) + "d} {2:" + str(sz[2]) + "s}"
         for column in columns:
             if len(column.name) > sz[3]:
@@ -869,7 +881,7 @@ class CDSTablesMaker:
                          'date': self.date,
                          'abstract': self.__splitLine(self.abstract, shift=2),
                          'description': self.__splitLine(self.more_description, shift=2),
-                         'authors': self.__add_authors(self.authors, shift=4),
+                         'authors': self.__add_authors(shift=4),
                          'bibcode': "=" + self.bibcode,
                          'keywords': self.__add_keywords(self.keywords, shift=len("Keywords: ")),
                          'tablesIndex': self.printTablesIndex(outBuffer=True),
@@ -895,7 +907,7 @@ class CDSTablesMaker:
         """Transform tables into MRT (ASCII aligned table with byte-by-byte header)
         """
         templateValue = {'title': self.__splitLine(self.title),
-                         'authors': self.__add_authors(self.authors, shift=4)}
+                         'authors': self.__add_authors(shift=4)}
         mrt_template = self.__dir + "/MRT.template"
 
         for table in self.__tables:
