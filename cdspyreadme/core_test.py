@@ -66,7 +66,7 @@ class ReadMeCase(unittest.TestCase):
         """test numpy table"""
         tablemaker = CDSTablesMaker()
         ntab = np.array([(1.1, 1, 'test'), (2.2, 2, 'test2'), (3.3, 3, None), (None, -1, '')],
-                        dtype=[('mag', np.float), ('recno', np.int32), ('comment', np.str_, 10)])
+                        dtype=[('mag', np.float64), ('recno', np.int32), ('comment', np.str_, 10)])
         tablename = ReadMeCase.__result_file("numpy")
         tablemaker.addTable(ntab,
                             name=tablename,
