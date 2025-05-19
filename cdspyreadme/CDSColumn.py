@@ -10,10 +10,11 @@ import math
 UNDEFINED_UNIT = "---"
 DEFAULT_STRING_SIZE = 50
 
-class SexaMeta:
-    """Sexa metadata"""
 
-    def __init__(self, name, description, fortran_format, unit):
+class SexaMeta:
+    """Sexagesimal metadata"""
+
+    def __init__(self, name: str, description: str, fortran_format: str, unit: str):
         """Constructor.
         :param name: column name
         :param description: column description
@@ -28,7 +29,7 @@ class SexaMeta:
 
 
 class SexaRA:
-    def __init__(self, number_sec_digits=0):
+    def __init__(self, number_sec_digits: int = 0):
         """Constructor.
         :param number_sec_digits: number of digit in seconds
         """
@@ -41,7 +42,7 @@ class SexaRA:
 
 
 class SexaDE:
-    def __init__(self, number_sec_digits):
+    def __init__(self, number_sec_digits: int):
         """Constructor.
         :param number_sec_digits: number of digit in seconds
         """
@@ -67,7 +68,7 @@ class CDSColumnFormatter:
         self.out_format = None
         self.none_format = None
 
-    def write(self, value):
+    def write(self, value: any):
         """write a value using the formatter
         :param value: value in input
         :return: the formatted value (for ASCII aligned serialization)
@@ -80,7 +81,7 @@ class CDSColumnFormatter:
 class CDSColumnIntegerFormatter(CDSColumnFormatter):
     """ CDS Column  for integer
     """
-    def __init__(self, column, has_null=False):
+    def __init__(self, column: Column, has_null: bool = False):
         """Constructor - build Format from an astropy column
         :param column: astropy column
         :param has_null: contain null values
@@ -89,22 +90,25 @@ class CDSColumnIntegerFormatter(CDSColumnFormatter):
         self.__set_slot(column, has_null)
         self.size = len(str(self.max))
         l = len(str(self.min))
-        if self.size < l: self.size = l
+        if self.size < l:
+            self.size = l
         self.fortran_format = "I" + str(self.size)
         self.format = ">" + self.fortran_format[1:]
 
         self.out_format = "{0:" + self.format + "}"
         self.none_format = "{0:" + str(self.size) + "s}"
 
-    def __set_slot(self, column, has_null):
-        if has_null: # optimized (2x more speed)
-            mcol = column  # MaskedColumn(column, mask=[col is None for col in column])
-            mcol.fill_value = -999999
-            self.max = max(mcol.filled())
-            if self.max == -999999: self.max = None
-            mcol.fill_value = +999999
-            self.min = min(mcol.filled())
-            if self.min == 999999: self.min = None
+    def __set_slot(self, column: Column, has_null: bool):
+        if has_null:  # optimized (2x more speed)
+            mask_col = column  # MaskedColumn(column, mask=[col is None for col in column])
+            mask_col.fill_value = -999999
+            self.max = max(mask_col.filled())
+            if self.max == -999999:
+                self.max = None
+            mask_col.fill_value = +999999
+            self.min = min(mask_col.filled())
+            if self.min == 999999:
+                self.min = None
         else:
             self.max = max(column)
             self.min = min(column)
@@ -113,7 +117,7 @@ class CDSColumnIntegerFormatter(CDSColumnFormatter):
 class CDSColumnStringFormatter(CDSColumnFormatter):
     """CDS column for String
     """
-    def __init__(self, column, has_null):
+    def __init__(self, column: Column, has_null: bool):
         """Constructor - build Format from an astropy column
         :param column: astropy column
         :param has_null: contain null values
@@ -122,10 +126,10 @@ class CDSColumnStringFormatter(CDSColumnFormatter):
 
         try:
             if has_null:
-                mcol = column  # MaskedColumn(column, mask=[col is None for col in column])
-                mcol.fill_value = ""
-                coltmp = Column(mcol.filled(), dtype=str)
-                self.size = int(re.sub(r'^[^0-9]+(\d+)$', r'\1', coltmp.dtype.str))
+                mask_col = column  # MaskedColumn(column, mask=[col is None for col in column])
+                mask_col.fill_value = ""
+                col_tmp = Column(mask_col.filled(), dtype=str)
+                self.size = int(re.sub(r'^[^0-9]+(\d+)$', r'\1', col_tmp.dtype.str))
             else:
                 self.size = int(re.sub(r'^[^0-9]+(\d+)$', r'\1', column.dtype.str))
         except Exception as e:
@@ -138,104 +142,164 @@ class CDSColumnStringFormatter(CDSColumnFormatter):
         self.none_format = self.out_format
 
 
+class FloatRepr:
+    """Float representation
+       extract precision, width, format....
+       The class can be used for a single value or a list of values (method consume()) to get the format
+       of a single or a list
+    """
+    SCI = 0
+    DEC = 1
+    MIXED = 2
+
+    REG_FLOAT = re.compile("([+-]*)([^eE.]+)([.]*)([0-9]*)([eE]*-*)[0-9]*")
+
+    def __init__(self):
+        """Constructor.
+        """
+        self.type = -1
+        self.sign = False  # contains sign
+
+        self.e_width = -1  # width (type SCI)
+        self.e_precision = -1  # precision (type SCI)
+        self.f_coma = -1  # decimal, after coma (type DEC)
+        self.f_dec = -1  # decimal, before coma (type DEC)
+
+    def consume(self, value: str):
+        """set format from a value
+        :param value: (string) value to consume
+        """
+        mo = FloatRepr.REG_FLOAT.match(value)
+        if mo is None: 
+            raise Exception(f"{value} is not a float number")
+
+        if self.sign is False:
+            self.sign = True if mo.group(1) != "" else False
+
+        if mo.group(5) != "":  # Scientific format
+            e_precision = len(mo.group(2))+len(mo.group(4))
+            if self.e_precision < e_precision:
+                self.e_precision = e_precision
+
+            w = len(value)
+            if self.e_width < w:
+                self.e_width = w
+
+            if self.type in (FloatRepr.MIXED, FloatRepr.DEC):
+                self.type = FloatRepr.MIXED
+            else:
+                self.type = FloatRepr.SCI
+
+        else:  # Decimal format
+            coma = len(mo.group(4))
+            if self.f_coma < coma:
+                self.f_coma = coma
+
+            dec = len(mo.group(2))
+            if self.f_dec < dec:
+                self.f_dec = dec
+
+            if self.type in (FloatRepr.MIXED, FloatRepr.SCI):
+                self.type = FloatRepr.MIXED
+            else:
+                self.type = FloatRepr.DEC
+
+    def width(self) -> int:
+        """get size (when serialized in string)
+        :return: the size
+        """
+        if self.type == FloatRepr.SCI:
+            return self.e_width
+        w = self.f_dec + self.f_coma + 1
+        if self.sign:
+            w += 1
+        if self.type == FloatRepr.DEC:
+            return w
+        return w if w > self.e_width else self.e_width
+
+    def precision(self) -> int:
+        """get precision
+        :return: precision
+        """
+        if self.type == FloatRepr.SCI:
+            return self.e_precision
+        w = self.f_dec + self.f_coma
+        if self.type == FloatRepr.DEC:
+            return w
+        return w if w > self.e_precision else self.e_precision
+
+    def fortran_format(self) -> str:
+        """return FORTRAN format style
+        """
+        if self.type == FloatRepr.SCI:
+            return f"E{self.width()}.{self.ePrecision}"
+        elif self.type == FloatRepr.MIXED:
+            return f"E{self.width()}.{self.precision()}"
+        else:
+            return f"F{self.width()}.{self.f_coma}"
+
+    def c_format(self) -> str:
+        """return C Format style
+        """
+        if self.type == FloatRepr.SCI:
+            return f"{self.width()}.{self.ePrecision}e"
+        elif self.type == FloatRepr.MIXED:
+            return f"{self.width()}.{self.precision()+1}g"
+        else:
+            return f"{self.width()}.{self.f_coma}f"
+
+
 class CDSColumnFloatFormatter(CDSColumnFormatter):
     """CDS column for float
     """
-    def __init__(self, column, has_null):
+    def __init__(self, column: Column, has_null: bool):
         """Constructor - build Format from an astropy column
         :param column: astropy column
         :param has_null: contain null values
+
+        Warning: compare float that can use (or not or sometimes)
+                 scientific format (C-type %e or %f or %g)
+
+        Ex: -12.12345     -> F10.5  (%10.5f)
+            -1.212345e-1  -> E12.7
         """
         CDSColumnFormatter.__init__(self)
         self.__set_slot(column, has_null)
+        self.__parse(column)
 
-        self.__regfloat = re.compile("([+-]*)([^eE.]+)([.]*)([0-9]*)([eE]*-*)[0-9]*")
-
-        maxSize = 1
-        maxprec = 0
-        maxDec = 0
-        maxEnt = 1
-        sign = False
-        #reg = re.compile("^[ -]*$")
-        fformat = 'F'
-        fmt = [0, 0, 0, 0, False]
+    def __parse(self, column: Column):
+        fmt_saved = FloatRepr()
 
         for rec in column:
             # skip null values
             if rec is None:
                 continue
             s = str(rec)
+            fmt_saved.consume(s)
 
-            #if reg.match(s): continue
-
-            if self.__splitFloatFormat(s, fmt) is True:
-                if fformat == 'F':
-                    maxSize = 1
-                    maxprec = 0
-                    maxDec = 0
-                # scientific notation
-                fformat = 'E'
-            else:
-                if fformat == 'E': continue
-
-            if maxprec < fmt[1]: maxprec = fmt[1]
-            if maxDec < fmt[3]: maxDec = fmt[3]
-            if maxEnt < fmt[2]: maxEnt = fmt[2]
-            if maxSize < fmt[0]: maxSize = fmt[0]
-            if fmt[4]: sign = True
-
-        if fformat == 'E':
-            self.size = maxSize
-            if sign: self.size += 1
-            self.fortran_format = fformat + str(self.size) + "." + str(maxprec)
-            self.format = str(self.size) + "." + str(maxDec) + "e"
-        else:
-            self.size = maxEnt + maxDec + 1
-            if sign: self.size += 1
-            self.fortran_format = fformat + str(self.size) + "." + str(maxDec)
-            self.format = self.fortran_format[1:] + "f"
+        self.size = fmt_saved.width()
+        self.fortran_format = fmt_saved.fortran_format()
+        self.format = fmt_saved.c_format()
 
         self.out_format = "{0:" + self.format + "}"
         self.none_format = "{0:" + str(self.size)+"s}"
 
-    def __set_slot(self, column, has_null):
-        if has_null: # optimized (2x more speed)
-            mcol = column  # MaskedColumn(column, mask=[col is None for col in column])
-            mcol.fill_value = -999999
-            self.max = max(mcol.filled())
-            if self.max == -999999: self.max = None
-            mcol.fill_value = +999999
-            self.min = min(mcol.filled())
-            if self.min == 999999: self.min = None
+    def __set_slot(self, column: Column, has_null: bool):
+        if has_null:  # optimized (2x more speed)
+            masked_col = column  # MaskedColumn(column, mask=[col is None for col in column])
+            masked_col.fill_value = -999999
+            self.max = max(masked_col.filled())
+            if self.max == -999999:
+                self.max = None
+            masked_col.fill_value = +999999
+            self.min = min(masked_col.filled())
+            if self.min == 999999:
+                self.min = None
         else:
             self.max = max(column)
             self.min = min(column)
 
-    def __splitFloatFormat(self, value, fmt):
-        """ get float format
-        value (IN) the float value
-        fmt (out) [size, prec, dec, ent, sign]
-        return True has scientific notation
-        """
-        mo = self.__regfloat.match(value)
-
-        if mo is None: raise Exception(value + " is not a float number")
-
-        fmt[0] = len(value)
-        if mo.group(1) != "":
-            fmt[4] = True
-        else:
-            fmt[4] = False
-        fmt[2] = len(mo.group(2))
-        fmt[3] = len(mo.group(4))
-        fmt[1] = fmt[2] + fmt[3]
-
-        if mo.group(5) != "":
-            # scientific notation
-            return True
-        return False
-
-    def write(self, value):
+    def write(self, value: any):
         """write a value using the formatter
         :param value: value in input
         :return: the formatted value (for ASCII aligned serialization)
@@ -282,7 +346,7 @@ class CDSColumnFloatFormatter(CDSColumnFormatter):
 class CDSColumn:
     """CDS Column decorator on astropy.table.Column
     """
-    def __init__(self, column):
+    def __init__(self, column: Column):
         """Constructor.
         :param column: astropy Column
         """
@@ -291,6 +355,8 @@ class CDSColumn:
 
         self.name = column.name
         self.size = None
+        self.min = None
+        self.max = None
         self.hasNull = None
         self.description = "Description of " + self.name
         self.unit = UNDEFINED_UNIT
@@ -298,28 +364,28 @@ class CDSColumn:
 
         self.__dbname = column.name
         self.__column = column
-        self.__sexa = [None, None]
+        self.__sexagesimal = [None, None]
         self.__force_format = None
 
-    def set_format(self, fmt):
+    def set_format(self, fmt: str):
         """force a format (fortran format)
         :param fmt: the new format (ex:  %F10.6)
         """
-        formater = CDSColumnFormatter()
-        formater.fortran_format = fmt
+        formatter = CDSColumnFormatter()
+        formatter.fortran_format = fmt
 
         mo = re.match("^([EF])([0-9]+)[.]([0-9]+)", fmt)
-        if mo :
+        if mo:
             if mo.group(1) == 'E':
                 f = "{0}.{1}e".format(mo.group(2), mo.group(3))
-                formater.size = int(mo.group(2))
-                formater.format = "%"+f
-                formater.out_format = "{{0:{}.{}e}}".format(mo.group(2), int(mo.group(3))-1)
+                formatter.size = int(mo.group(2))
+                formatter.format = "%"+f
+                formatter.out_format = "{{0:{}.{}e}}".format(mo.group(2), int(mo.group(3))-1)
             else:
                 f = "{0}.{1}f".format(mo.group(2), mo.group(3))
-                formater.size = int(mo.group(2))
-                formater.format = "%"+f
-                formater.out_format = "{0:"+f+"}"
+                formatter.size = int(mo.group(2))
+                formatter.format = "%"+f
+                formatter.out_format = "{0:"+f+"}"
 
         else:
             mo = re.match("^([IA])([0-9]+)", fmt)
@@ -328,24 +394,19 @@ class CDSColumn:
 
             if mo.group(1) == "I":
                 f = "{}d".format(mo.group(2))
-                formater.size = int(mo.group(2))
-                formater.format = "%"+f
-                formater.out_format = "{0:>"+mo.group(2)+"}"
+                formatter.size = int(mo.group(2))
+                formatter.format = "%"+f
+                formatter.out_format = "{0:>"+mo.group(2)+"}"
             else:
                 f = "{}s".format(mo.group(2))
-                formater.size = int(mo.group(2))
-                formater.format = "%"+f
-                formater.out_format = "{0:"+f+"}"
+                formatter.size = int(mo.group(2))
+                formatter.format = "%"+f
+                formatter.out_format = "{0:"+f+"}"
  
-        formater.none_format = "{0:"+str(formater.size)+"}"
-        self.__force_format = formater
+        formatter.none_format = "{0:"+str(formatter.size)+"}"
+        self.__force_format = formatter
 
-    #def get_value(self, i):
-    #    """Get the value for i-th record of the Column
-    #    """
-    #    return self.__column[i]
-
-    def set_null_value(self, null_value):
+    def set_null_value(self, null_value: any):
         """Assign null value to the Column
         (create an astropy  MaskedColumn)
         :param null_value: value
@@ -362,7 +423,7 @@ class CDSColumn:
     def parse(self):
         """the method parse the columns and set type, size format
         """
-        if self.formatter is not None :
+        if self.formatter is not None:
             return
 
         if self.__column.description:
@@ -419,8 +480,10 @@ class CDSColumn:
         #    return str
 
         for value in self.__column:
-            if value is None: continue
-            if isinstance(value, numpy.ma.core.MaskedConstant): continue
+            if value is None:
+                continue
+            if isinstance(value, numpy.ma.core.MaskedConstant):
+                continue
             if isinstance(value, (int, numpy.integer)):
                 return int
             elif numpy.isreal(value):
@@ -429,17 +492,17 @@ class CDSColumn:
                 return str
         return str
 
-    def getName(self):
+    def getName(self) -> str:
         """ get the name in input
         :return: the name (which can be different that original Column.name)
         """
         return self.__dbname
 
-    def isSexa(self):
+    def isSexa(self) -> bool:
         """Return True if the column is in sexagesimal
         :return: True is Sexagesimal
         """
-        if self.__sexa[0] is None and self.__sexa[1] is None:
+        if self.__sexagesimal[0] is None and self.__sexagesimal[1] is None:
             return False
         return True
 
@@ -447,70 +510,75 @@ class CDSColumn:
         """Return True if Right ascension
         :return: True if Sexagesimal RA
         """
-        if self.__sexa[0] != None: return True
+        if self.__sexagesimal[0] is not None:
+            return True
         return False
 
     def isSexaDE(self):
         """Return True if Declination
         :return: True if sexagesimal declination
         """
-        if self.__sexa[1] != None: return True
+        if self.__sexagesimal[1] is not None:
+            return True
         return False
 
-    def setSexaRa(self, precision=0):
+    def setSexaRa(self, precision: int = 0):
         """set column as a Sexagesimal Right Ascension
         :param precision: number of seconds decimals
         """
         self.parse()
 
-        if self.formatter.fortran_format[0] != 'A': raise Exception("bad sexa format")
+        if self.formatter.fortran_format[0] != 'A': raise Exception("bad sexagesimal format")
         if precision == 0:
-            if self.size > 9 : precision = self.size - 9 #HH:MM:SS.ss
+            if self.size > 9:
+                precision = self.size - 9  # HH:MM:SS.ss
         else:
             if self.size < 9 + precision or self.size > 10 + precision:
-                raise Exception("bad sexa format or bad precision (format: [+-]dd mm ss[.ss])")
+                raise Exception("bad sexagesimal format or bad precision (format: [+-]dd mm ss[.ss])")
 
         self.formatter.fortran_format = self.formatter.fortran_format.replace('A', 'R')
-        self.__sexa[0]= SexaRA(precision)
+        self.__sexagesimal[0] = SexaRA(precision)
 
-    def setSexaDe(self, precision=0):
+    def setSexaDe(self, precision: int = 0):
         """set column as a Sexagesimal Declination
         :param precision: number of seconds decimals
         """
         self.parse()
-        if self.formatter.fortran_format[0] != 'A': raise Exception("bad sexa format")
+        if self.formatter.fortran_format[0] != 'A': raise Exception("bad sexagesimal format")
         if precision == 0:
-            if self.size > 9 : precision = self.size - 10 #[+-]HH:MM:SS.ss
+            if self.size > 9:
+                precision = self.size - 10  # [+-]HH:MM:SS.ss
         else:
             if self.size < 9 + precision or self.size > 10 + precision:
-                raise Exception("bad sexa format or bad precision (format: [+-]dd mm ss[.ss])")
+                raise Exception("bad sexagesimal format or bad precision (format: [+-]dd mm ss[.ss])")
 
         self.formatter.fortran_format = self.formatter.fortran_format.replace('A', 'D')
-        self.__sexa[1] = SexaDE(precision)#CDSColumnSexaDEFormatter(self.formatter)
+        self.__sexagesimal[1] = SexaDE(precision)
 
     def getSexaRA(self):
         """get Sexagesimal  Right ascension
         :return: SexaMeta information
         """
-        return self.__sexa[0]
+        return self.__sexagesimal[0]
 
     def getSexaDE(self):
         """get Sexagesimal DEclination
         :return: SexaMeta information
         """
-        return self.__sexa[1]
+        return self.__sexagesimal[1]
 
-    def __has_null(self):
+    def __has_null(self) -> bool:
         """Test null values in a numpy array
         """
-        if isinstance(self.__column, MaskedColumn): return True
+        if isinstance(self.__column, MaskedColumn):
+            return True
         #try:
         #    n = len(self.__column[self.__column.argmin(fill_value=0)])
         #except: #fail inf MaskedColumn
         #    return True
         return False
 
-    def __get_unit(self):
+    def __get_unit(self) -> str:
         s = self.name.lower()
         if s.find("magnitude") > -1:
             return "mag"
@@ -518,11 +586,11 @@ class CDSColumn:
             return "d"
         return UNDEFINED_UNIT
 
-    def value(self, nrec):
+    def value(self, nrec: int) -> str:
         """get formatted value
-        :return: tehe value formated (ready fo ASCII aligned format)
+        :return: the value formatted (ready fo ASCII aligned format)
         """
         return self.formatter.write(self.__column[nrec])
 
-    def __str__(self):
+    def __str__(self) -> str:
         return "<CDSColumn name={0}>".format(self.name)
