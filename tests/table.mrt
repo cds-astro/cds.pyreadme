@@ -24,7 +24,7 @@ Byte-by-byte Description of file: apjlab0750t2_mrt.txt
   86- 90 F5.2   dT      <B>-O   ? Magnetic field modulus from optical data (2)
   92- 95 F4.2   dT    e_<B>-O   ? Uncertainty in <B>-O (2)
       97 A1     ---   r_<B>-O   Reference code for <B>-O (1)
-  99-100 I2     ---     Num-O   ? Number of spectral lines used to measure <B>-O
+  99-100 I2     ---     Num-O   [1/50]? Number of spectral lines used to measure <B>-O
 --------------------------------------------------------------------------------
 Note (1): 
     1 = Renson & Manfroid (2009) [2009A&A...498..961R];

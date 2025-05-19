@@ -1,5 +1,32 @@
 [build-system]
-requires = [
-    "setuptools",
-    "astropy>=3.2"
+requires = ["setuptools >= 77.0.3"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "cdspyreadme"
+version = "1.7"
+dependencies = [
+    "astropy>=3.2",
+    "numpy>=1.17.2"
 ]
+requires-python = ">=3.6"
+authors = [
+  { name="Gilles Landais (CDS)", email="gilles.landais@unistra.fr" },
+]
+description = "ReadMe generator package (cdspyreadme)"
+readme = "README.md"
+license = "BSD-3-Clause"
+license-files = ["LICENSE.*"]
+keywords = ["astronomy", "CDS"]
+classifiers = [
+    "Programming Language :: Python :: 3.6",
+    "Operating System :: OS Independent",
+    "Intended Audience :: Science/Research",
+    "Topic :: Scientific/Engineering :: Astronomy",
+]
+
+[tool.setuptools.package-data]
+cdspyreadme = ["*.template"]
+
+[project.urls]
+Homepage = "https://github.com/cds-astro/cds.pyreadme"
