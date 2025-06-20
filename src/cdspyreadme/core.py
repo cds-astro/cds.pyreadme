@@ -861,7 +861,7 @@ class CDSTablesMaker:
                     nullflag = ""
 
                 borne = ""
-                if column.min and column.max:
+                if column.min and column.max and np.isfinite(column.min) and np.isfinite(column.max):
                     if column.formatter.fortran_format[0] == 'I':
                         if abs(column.min) < MAX_COL_INT_LIMIT and abs(column.max) < MAX_COL_INT_LIMIT:
                             if column.min == column.max:
