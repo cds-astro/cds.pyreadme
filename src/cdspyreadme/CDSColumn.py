@@ -232,7 +232,7 @@ class FloatRepr:
         """return FORTRAN format style
         """
         if self.type == FloatRepr.SCI:
-            return f"E{self.width()}.{self.ePrecision}"
+            return f"E{self.width()}.{self.e_precision}"
         elif self.type == FloatRepr.MIXED:
             return f"E{self.width()}.{self.precision()}"
         else:
@@ -242,7 +242,7 @@ class FloatRepr:
         """return C Format style
         """
         if self.type == FloatRepr.SCI:
-            return f"{self.width()}.{self.ePrecision}e"
+            return f"{self.width()}.{self.e_precision}e"
         elif self.type == FloatRepr.MIXED:
             return f"{self.width()}.{self.precision()+1}g"
         else:
