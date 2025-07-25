@@ -41,12 +41,12 @@ tablemaker.more_description = "Additional information of the data context."
 tablemaker.putRef("II/246", "2mass catalogue")
 tablemaker.putRef("http://...", "external link")
 
-# Print ReadMe
+# Save ReadMe (in current directory)
 tablemaker.makeReadMe()
 
-# Save ReadMe into a file
-with open("ReadMe", "w") as fd:
-    tablemaker.makeReadMe(out=fd)
+# print ReadMe
+import sys
+tablemaker.makeReadMe(out=sys.stdout)
 ```
 
 #### add astropy table
@@ -143,20 +143,22 @@ tablemaker.toMRT()
 ...
 ```python
 table = tablemaker.addTable(...)
-column = table.get_column("ra")
+column = table.get_column("mag")
 
-# modify format
-column.set_format("F10.6")
+# modify format
+column.set_format("F6.3")
 
 # modify name and description
-column.name="raj2000"
-column.description="right ascension in ICRS"
+column.name = "umag"
+column.description = "Magnitude in U band"
+# Add a note
+column.note = "filter INT/WFC/U" 
 
 tablemaker.writeCDSTables()
 tablemaker.makeReadMe()
 ```
 
-#### FITS update 
+### FITS update 
 How to add columns description using TCOMMx cards -
 
 ```python
@@ -179,4 +181,22 @@ table = tablemaker.addTable(tab)
 tablemaker = cdspyreadme.CDSTablesMaker()
 table = tablemaker.addTable(tab)
 tablemaker.writeCDSTables()
+```
+
+### Manage output directory
+
+Update the output directory:
+
+```python
+import cdspyreadme
+
+tablemaker = cdspyreadme.CDSTablesMaker(outfolder="/tmp")
+```
+
+Manage ReadMe output
+
+```python
+# save ReadMe in a .bak file
+with open("/tmp/ReadMe.bak", "w") as fd:
+    tablemaker.makeReadMe(out=fd)
 ```

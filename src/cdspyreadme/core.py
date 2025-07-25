@@ -1,6 +1,6 @@
-"""
-   G.Landais (CDS) 28 nov 2015
-   Generate ReadMe and CDS standardized tables (in ASCII aligned columns)
+# Licensed under a 3-clause BSD style license - see LICENSE.txt
+
+""" Generate ReadMe and CDS standardized tables (in ASCII aligned columns)
 """
 
 from astropy.io import ascii
@@ -29,11 +29,32 @@ class CDSException(Exception):
 
 class CDSTable:
     """Manage table
+
+    Attributes
+    ----------
+    logger: logging.Logger
+        logger
+
+    notes: list[str]
+        Notes applied on table
+
+    table: any
+        Table in input
+
+    nlines: int
+        Number of lines
+
+    nullvalue: any
+        Define a Null values (default is None)
     """
 
     def __init__(self, table: any):
         """ Constructor
-        :param table: astropy table (or table name or numpy array)
+
+        Parameters
+        ----------
+        table: astropy.table.Table | numpy.array | str
+            astropy table (or table name or numpy array)
         """
         self.logger = logging.getLogger('CDSTable')
         self.__bytebybyte_template = None
@@ -47,8 +68,15 @@ class CDSTable:
 
     def get_column(self, name: str = None) -> CDSColumn:
         """Get CDS meta columns
-        :param name: column name (default is None)
-        :return: CDSColumn
+
+        Parameters
+        ----------
+        name: str
+            column name (default is None)
+
+        Returns
+        -------
+        CDSColumn
         """
         if name is None:
             return self.__cds_columns
@@ -59,38 +87,53 @@ class CDSTable:
 
     def setByteByByteTemplate(self, name: str):
         """Set a User Byte-By-Byte template
-        :param name: the template name
+
+        Parameters
+        ----------
+        name: str
+            the template name
         """
         self.__bytebybyte_template = name
 
     def getByteByByteTemplate(self) -> str:
-        """Get the Byte-By-Byte template
-        :return: the tempalte name
+        """Get the Byte-By-Byte template name
+
+        Returns
+        -------
+        str
         """
         return self.__bytebybyte_template
 
-    def __write_table(self, fo):
+    def __write_table(self, append: bool = False, outfolder: str = None):
         col_length = len(self.__cds_columns)
 
-        for num_rec in range(len(self.table)):
-            fo.write(self.__cds_columns[0].value(num_rec))
-            for i in range(1, col_length):
-                fo.write(" " + self.__cds_columns[i].value(num_rec))
-            fo.write("\n")
+        mode = "a" if append else "w"
+        out_filename = f"{outfolder}/{self.name}" if outfolder else self.name
+        with open(out_filename, mode) as fo:
+            for num_rec in range(len(self.table)):
+                fo.write(self.__cds_columns[0].value(num_rec))
+                for i in range(1, col_length):
+                    fo.write(" " + self.__cds_columns[i].value(num_rec))
+                fo.write("\n")
+        self.logger.debug(f"make CDS table {out_filename}")
 
-    def makeCDSTable(self, fd=None):
+    def makeCDSTable(self, append: bool = False, outfolder: str = None):
         """Make the standardized table in ASCII aligned format.
-        :param fd: file descriptor (by default, the methods creates a new file with CDSTable.name)
+
+        Parameters
+        ----------
+        append: bool, optional
+            append the table if existing (default is False)
+
+        outfolder: str, optional
+            output directory (default current directory)
         """
         for col in self.__cds_columns:
             col.parse()
             if self.nullvalue:
                 col.set_null_value(self.nullvalue)
 
-        if fd is None:
-            fd = open(self.name, "w")
-        self.__write_table(fd)
-        fd.close()
+        self.__write_table(append, outfolder)
 
     def init_meta_columns(self):
         """Initialize list of CDSColumns  (self.__cds_columns)
@@ -110,7 +153,10 @@ class CDSTable:
 
     def getlinewidth(self):
         """Get ASCII table line width
-        :return: the line size
+
+        Returns
+        -------
+        int
         """
         if self.__line_width is not None:
             return self.__line_width
@@ -123,7 +169,10 @@ class CDSTable:
 
     def gatherSexagesimalColumn(self) -> bool:  # not used
         """gather/detects sexagesimal columns if in different columns
-        :return: True if found
+
+        Returns
+        -------
+        bool
         """
         if isinstance(self.table, Table):
             return
@@ -146,13 +195,32 @@ class CDSTable:
 
 class CDSAstropyTable(CDSTable):
     """Manage astropy table
+
+    Attributes
+    ----------
+    name: str
+        output filename
+
+    description: str
+        Table description
+
+    nlines: int
+        Number of lines
     """
 
     def __init__(self, table: Table, name: str = None, description: str = None):
         """Constructor
-        :param table: astropy table
-        :param name: table name in output
-        :param description: table description
+
+        Parameters
+        ----------
+        table: astropy.table.Table
+            Table in input
+
+        name: str
+            name in output
+
+        description: str
+            table description
         """
         if not isinstance(table, Table):
             raise CDSException("input is not Astropy Table")
@@ -170,13 +238,31 @@ class CDSAstropyTable(CDSTable):
 
 class CDSNumpyTable(CDSTable):
     """Manage numpy table
-       (TODO: problem with None values)
+
+    Attributes
+    ----------
+    name: str
+        output filename
+
+    description: str
+        Table description
+
+    nlines: int
+        Number of lines
     """
     def __init__(self, table: Table, name: str = None, description: str = None):
         """Constructor
-        :param table: Numpy table
-        :param name: table name in output
-        :param description: table description
+
+        Parameters
+        ----------
+        table: astropy.table.Table
+            Table in input
+
+        name: str
+            name in output
+
+        description: str
+            table description
         """
         if not isinstance(table, np.ndarray):
             raise CDSException("input is not a Numpy Table")
@@ -195,14 +281,35 @@ class CDSNumpyTable(CDSTable):
 
 class CDSFileTable(CDSTable):
     """Manage Table in TSV/CSV or ASCII aligned column file
+
+    Attributes
+    ----------
+    name: str
+        output filename
+
+    description: str
+        Table description
+
+    nlines: int
+        Number of lines
     """
 
     def __init__(self, table: str, name: str = None, description: str = None, data_start: int = None):
         """Constructor
-        :param table: table file name
-        :param name: table name in output
-        :param description: table description
-        :param data_start: line index for the start of data not counting comment or blank lines.
+
+        Parameters
+        ----------
+        table: astropy.table.Table
+            Table in input
+
+        name: str
+            name in output
+
+        description: str
+            table description
+
+        data_start: int
+            line index for the start of data not counting comment or blank lines.
         """
         if not isinstance(table, str):
             raise CDSException("input is not a Table name")
@@ -224,15 +331,39 @@ class CDSFileTable(CDSTable):
 
 class CDSAsciiTable(CDSFileTable):
     """CDS ASCII aligned file
-       (long to execute because it creates a temporary csv file
-        ant then it uses CDSFileTable)
+
+    Notes
+    -----
+    long to execute because it creates a temporary csv file ant then it uses CDSFileTable
+
+    Attributes
+    ----------
+    name: str
+        output filename
+
+    description: str
+        Table description
+
+    nlines: int
+        Number of lines
     """
+
     def __init__(self, filename: str, name: str = None, description: str = None, data_start: int = None):
         """Constructor.
-        :param filename: the file name
-        :param name: table name in output
-        :param description: table description
-        :param data_start: line index for the start of data not counting comment or blank lines.
+
+        Parameters
+        ----------
+        table: astropy.table.Table
+            Table in input
+
+        name: str
+            name in output
+
+        description: str
+            table description
+
+        data_start: int
+            line index for the start of data not counting comment or blank lines.
         """
         self.__filename = filename
         self.to_sv(filename, filename+".tmp")
@@ -242,9 +373,17 @@ class CDSAsciiTable(CDSFileTable):
 
     def to_sv(self, filename: str, out_filename: str, separator: str = ','):
         """Create  CSV table from ASCII aligned table
-        :param filename: ASCII aligned filename in input
-        :param out_filename: CSV filename in output
-        :param separator: char separator in output (default CSV)
+
+        Parameters
+        ----------
+        filename: str
+            ASCII aligned filename in input
+
+        out_filename: str
+            CSV filename in output
+
+        separator: str, optional
+            char separator in output (default CSV)
         """
         # memorize the full file
         with open(filename, "r") as fd:
@@ -298,27 +437,41 @@ class CDSAsciiTable(CDSFileTable):
 
                 out.write(separator.join(buff))
 
-    def makeCDSTable_2(self):  # not used
-        for col in self.get_column():
-            col.parse()
-
-        # copy table
-        if self.__filename != self.name:
-            with open(self.__filename, "r") as fd:
-                with open(self.name, "w") as fout:
-                    for line in fd:
-                        fout.write(line)
-
 
 class CDSMRTTable(CDSTable):
     """Manage MRT file to add information in the ReadMe
+
+    Attributes
+    ----------
+    name: str
+        output filename
+
+    description: str
+        Table description
+
+    nlines: int
+        Number of lines
+
+    notes: list[str]
+        Notes applied on the table
+
     """
-    def __init__(self, tablein: str, tableout: str =None, description: str =None, set_limit: bool = False):
+    def __init__(self, tablein: str, tableout: str = None, description: str = None, set_limit: bool = False):
         """Constructor
-        :param tablein:  table in intput
-        :param tableout: table in output
-        :param description: description
-        :param set_limit: add limits to the byte-by-byte description
+
+         Parameters
+        ----------
+        table_in: str
+            Table in input
+
+        tableout: str, optional
+            name in output
+
+        description: str
+            table description
+
+        set_limit: bool, optional
+            add limits to the byte-by-byte description
         """
         if tableout is None:
             tableout = tablein.replace("mrt", "").replace(".txt", "") + ".dat"
@@ -443,8 +596,15 @@ class CDSMRTTable(CDSTable):
 
     def __check_statistics(self, column_desc: str) -> bool:
         """check if statistics exists (bracket in column description)
-        :param column: the CDScolumn to check
-        :return True if already exists
+
+        Parameters
+        ----------
+        column:
+            the CDScolumn to check
+
+        Returns
+        -------
+            bool
         """
         c = re.sub(r"[?]=[^ \[]", "", column_desc).lstrip()
         if re.search(r"^\[.*\]", c):
@@ -493,27 +653,36 @@ class CDSMRTTable(CDSTable):
         if ncol == len(columns):
             self.__bbb = "\n".join(bbb_out) + "\n"
 
-    def __write_table(self):
+    def __write_table(self, append: bool = False, outfolder: str = None):
         i = 0
         fd = open(self.__table_name, "r")
-        fout = open(self.__table_name_cds, "w")
-
-        for line in fd:
-            i += 1
-            if i < self.__begin_data:
-                continue
-            fout.write(line)
+        out_filename = f"{outfolder}/{self.__table_name_cds}" if outfolder else self.__table_name_cds
+        mode = "a" if append else "w"
+        with open(out_filename, mode) as fout:
+            for line in fd:
+                i += 1
+                if i < self.__begin_data:
+                    continue
+                fout.write(line)
 
         fd.close()
-        fout.close()
         self.__is_written = True
+        self.logger.debug(f"make CDS table {out_filename}")
 
-    def makeCDSTable(self):
+    def makeCDSTable(self, append: bool = False, outfolder: str = None):
         """Make the standardized table in
            ASCII format with aligned columns.
+
+        Parameters
+        ----------
+        append: bool, optional
+            append the table if existing (default is False)
+
+        outfolder: str, optional
+            output directory (default current directory)
         """
         if self.__is_written: return
-        self.__write_table()
+        self.__write_table(append, outfolder)
 
     def setByteByByteTemplate(self, name: str):
         """Set a User Byte-By-Byte template
@@ -523,43 +692,94 @@ class CDSMRTTable(CDSTable):
 
     def getByteByByteTemplate(self) -> str:
         """Get the Byte-By-Byte template
+
+        Returns
+        -------
+        str
         """
         return os.path.dirname(__file__) + "/bytebybyte.template"
 
     def getByteByByte(self) -> str:
         """Get byte-by-byte.
-        :return: byte-by-byte string
+
+        Returns
+        -------
+        str
         """
         return self.__bbb
 
     def getlinewidth(self) -> int:
         """get ASCII table line width
-        :return: ASCII line size
+
+        Returns
+        -------
+        int
         """
         return self.__line_width
 
     def get_columns(self) -> list:
         """get CDS meta columns
-        :return: CDSColumn array
+
+        Returns
+        -------
+        list
         """
         return self.__columns
 
 
 class CDSTablesMaker:
     """Generate standardized tables and ReadMe
+
+    Attributes
+    ----------
+    title: str
+        Title use in ReadMe
+
+    author: str
+        First author
+
+    catalogue: str
+        Catalogue name
+
+    date: str
+        Date of publication in a journal
+
+    abstract: str
+        Abstract
+
+    more_description: str
+        Desccription (usually instruments and methods used to genaerate the data)
+
+    authors: str
+        list of authors in a string (separated by ',')
+
+    bibcode: str
+        Bibliographic code (bibcode)
+
+    keywords: str
+        Keywords (separated by ',')
+
+    ref: str
+        Bibliographic Reference
+
+    logger: logging.Logger
+         logging
     """
 
-    def __init__(self, out=None, debug: bool = False):
+    def __init__(self, debug: bool = False, outfolder: str = None):
         """Constructor
-        :param out: the output file (default: stdout)
-        :param debug: True/False
+
+        Parameters
+        ----------
+        debug: bool, optional
+            debug mode (default is False)
+
+        outfolder: str, optional
+            directory in output (default is current directory)
         """
         self.__dir = os.path.dirname(os.path.realpath(__file__))
         self.__tables = []
         self.__readme_template = self.__dir + "/ReadMe.template"
-
-        if out is not None:
-            sys.stdout = open(out, 'w')
 
         self.title = 'Title ?'
         self.author = 'First author ?'
@@ -574,17 +794,31 @@ class CDSTablesMaker:
         self.ref = None
         self.__template_value = None
         self.logger = logging.getLogger('CDSTablesMaker')
+        self.__outfolder = outfolder
 
         if debug is True:
-            self.logger.basicConfig(level=logging.DEBUG)
+            logging.basicConfig(level=logging.DEBUG)
 
     def addTable(self, table: any, name: str = None, description: str = None, nullvalue=None) -> CDSTable:
         """Add a Table, memorize the meta-data and generate the standardized CDS table
-        :param table: table (type accepted: astropy, numpy, filename, CDSTable)
-        :param name: the name used in output
-        :param description: table description
-        :param nullvalue: set a null value (applied for all columns)
-        :return: CDStable created
+
+        Parameters
+        ----------
+        table: astropy.table.Table|numoy.array|str|CDSTable
+            table (type accepted: astropy, numpy, filename, CDSTable)
+
+        name: str
+            the name used in output
+
+        description: str
+            table description
+
+        nullvalue:
+            set a null value (applied for all columns)
+
+        Returns
+        -------
+        CDStable
         """
         self.logger.debug("add table")
         if isinstance(table, CDSTable):
@@ -612,12 +846,14 @@ class CDSTablesMaker:
         """Write tables in ASCII format
         """
         for table in self.__tables:
-            table.makeCDSTable()
-            self.logger.debug("make CDS table " + table.name)
+            table.makeCDSTable(append=False, outfolder=self.__outfolder)
 
     def getTablesInfo(self) -> dict:
         """get tables information.
-        :return: info (dictionary)
+
+        Returns
+        -------
+        dict
         """
         info = []
         for table in self.__tables:
@@ -626,13 +862,20 @@ class CDSTablesMaker:
 
     def getTables(self) -> list:
         """Get the CDSTable list
-        :return: list of CDSTable
+
+        Returns
+        -------
+        list[CDSTable]
         """
         return self.__tables
 
     def printTablesIndex(self, outBuffer: bool = False):
         """Print the tables index
-        :param outBuffer: true to get buffer, else write on output (default: False)
+
+        Parameters
+        ----------
+        outBuffer:  bool, optional
+            true to get buffer, else write on output (default: False)
         """
         sz = [14, 0, 8]
         for tab in self.__tables:
@@ -721,8 +964,14 @@ class CDSTablesMaker:
 
     def __splitLine(self, line: str, shift: int = 0):
         """Split line 80 char
-        :param line: line to split
-        :param shift: add left blank
+
+        Parameters
+        ----------
+        line:
+            line to split
+
+        shift: int, optional
+            add left blank
         """
         if shift > MAX_SIZE_README_LINE:
             shift = 0
@@ -730,7 +979,11 @@ class CDSTablesMaker:
 
     def add_author(self, author: str):
         """add an author
-        :param author: author name (eg: Newton I.)
+
+        Parameters
+        ----------
+        author: str
+            author name (eg: Newton I.)
         """
         logging.debug("add author "+author)
         if self.__authors is None:
@@ -775,9 +1028,18 @@ class CDSTablesMaker:
  
     def __add_keywords(self, line: str, shift: int = 0) -> str:
         """Split the line containing the authors without separate given and surname
-        :param line: keywords list in a line
-        :param shift: add left blank
-        :return: keywords formatted string
+
+        Parameters
+        ----------
+        param line:
+            keywords list in a line
+
+        shift: int, optional
+            add left blank
+
+        Returns
+        -------
+        str
         """
         # Replace all spaces that are NOT precede by ; with !
         line = re.sub("(?<!;) ", "!", line)
@@ -796,8 +1058,13 @@ class CDSTablesMaker:
 
     def printByteByByte(self, table: CDSTable, outBuffer: bool = False):
         """Print byte-by-byte
-        :param table: the CDSTable
-        :param outBuffer: true to get buffer, else write on output (default: False)
+
+        Parameters
+        ----------
+        table: CDSTable
+
+        outBuffer: bool, optional
+            true to get buffer, else write on output (default: False)
         """
         if isinstance(table, CDSMRTTable):
             buff = table.getByteByByte()
@@ -847,6 +1114,7 @@ class CDSTablesMaker:
         buff += SEP_LINE
 
         # content
+        num_note = 1
         for column in columns:
             endb = column.size + startb - 1
             if column.formatter.fortran_format[0] == 'R':
@@ -872,7 +1140,12 @@ class CDSTablesMaker:
                         borne = "[{0}/{1}]".format(math.floor(column.min*100)/100.,
                                                    math.ceil(column.max*100)/100.)
 
-                description = "{0}{1} {2}".format(borne, nullflag, description)
+                note = ""
+                if column.note:
+                    note = f" ({num_note})"
+                    num_note += 1
+
+                description = "{0}{1} {2}{3}".format(borne, nullflag, description, note)
                 newline = fmtb.format(startb, endb, "",
                                       self.__strFmt(column.formatter.fortran_format),
                                       self.__strFmt(column.unit),
@@ -888,9 +1161,18 @@ class CDSTablesMaker:
                     buff += newline + "\n"
             startb = endb + 2
 
+        # add the notes
+        the_notes = []
         if table.notes is not None:
+            the_notes = table.notes[0:]
+        num_note = 1
+        for col in columns:
+            if col.note:
+                the_notes.append(f"({num_note}) {col.note}")
+                num_note += 1
+        if len(the_notes) > 0:
             buff += SEP_LINE
-            for line in table.notes: buff += line + "\n"
+            for line in the_notes: buff += line + "\n"
             buff += SEP_LINE
 
         if outBuffer:
@@ -908,18 +1190,30 @@ class CDSTablesMaker:
             src = Template(filein.read())
             return src.substitute(template_value)
 
-    def setReadmeTemplate(self, templatename: str, templateValue: str = None):
+    def setReadmeTemplate(self, templatename: str, templateValue: dict = None):
         """Set a user ReadMe template
-        :param templateName: the template name
-        :param templateValue: dictionary to fill added variable in templatename
+
+        Parameters
+        ----------
+        templateName: str
+            the template name
+
+        templateValue: dict, optional
+            dictionary to fill added variable in templatename
         """
         self.__readme_template = templatename
         self.__template_value = templateValue
 
     def putRef(self, catname: str, title: str = ""):
         """Put a reference.
-        :param catname: catalogue name (string)
-        :param title: the title (string)
+
+        Parameters
+        ----------
+        catname: str
+            catalogue name
+
+        title: str, optional
+            the title
         """
         if self.ref is None:
             self.ref = []
@@ -929,7 +1223,11 @@ class CDSTablesMaker:
 
     def printRef(self, outBuffer: bool):
         """The "See also" section in ReadMe
-        :param outBuffer: true to get buffer, else write on output (default: False)
+
+        Parameters
+        ----------
+        outBuffer: bool
+            true to get buffer, else write on output
         """
         if self.ref is None or len(self.ref) == 0: return
 
@@ -946,9 +1244,14 @@ class CDSTablesMaker:
             return buf
         sys.stdout.write(buf)
 
-    def makeReadMe(self, out=sys.stdout, extra_template_keys: dict = None):
+    def makeReadMe(self, out=None):
         """Print the ReadMe
-        :param out: file descriptor (default sys.stdout)
+
+        Parameters
+        ----------
+        out: file descriptor (default create a File "ReadMe")
+
+        Note: sys.stdout (default output in previous release) is accepted 
         """
         template_value = {'catalogue': self.catalogue,
                          'title': self.__splitLine(self.title),
@@ -977,6 +1280,12 @@ class CDSTablesMaker:
         with open(self.__readme_template) as filein:
             src = Template(filein.read())
             result = src.substitute(template_value)
+        
+        if out is None:
+            out_filename = f"{self.__outfolder}/ReadMe" if self.__outfolder else "ReadMe"
+            with open(out_filename, "w") as fout:
+                fout.write(result)
+        else:
             out.write(result)
 
     def toMRT(self):
@@ -992,9 +1301,10 @@ class CDSTablesMaker:
                 col.parse()
             template_value['bytebybyte'] = self.__getByteByByteTemplate(table)
 
-            with open(table.name, "w") as fd:
+            out_filename = f"{self.__outfolder}/{table.name}" if self.__outfolder else table.name
+            with open(out_filename, "w") as fd:
                 with open(mrt_template) as filein:
                     src = Template(filein.read())
                     result = src.substitute(template_value)
                     fd.write(result)
-                table.makeCDSTable(fd)
+            table.makeCDSTable(append=True, outfolder=self.__outfolder)

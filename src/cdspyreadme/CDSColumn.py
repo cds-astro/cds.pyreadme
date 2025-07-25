@@ -1,7 +1,7 @@
+# Licensed under a 3-clause BSD style license - see LICENSE.txt
+""" CDSColumn, used to Generate ReadMe and CDS standardized tables (in ASCII aligned columns)
 """
-   G.Landais (CDS) 28 nov 2015
-   CDSColumn, used to Generate ReadMe and CDS standardized tables (in ASCII aligned columns)
-"""
+
 import numpy
 import re
 import logging
@@ -12,14 +12,38 @@ DEFAULT_STRING_SIZE = 50
 
 
 class SexaMeta:
-    """Sexagesimal metadata"""
+    """Sexagesimal metadata
+
+    Attributes
+    ----------
+    name: str
+        Column name
+
+    description: str
+        Description
+
+    fortran_format: str
+        FORTRAN format
+
+    unit: str
+    """
 
     def __init__(self, name: str, description: str, fortran_format: str, unit: str):
         """Constructor.
-        :param name: column name
-        :param description: column description
-        :param fortran_format: Fortran format
-        :param unit: column unit
+
+        Parameters
+        ----------
+        name: str
+            column name
+
+        description: str
+            column description
+
+        fortran_format: str
+            Fortran format
+
+        unit: str
+            column unit
         """
         self.name = name
         self.description = description
@@ -29,9 +53,25 @@ class SexaMeta:
 
 
 class SexaRA:
+    """Right ascension columns set
+    Attributes
+    ----------
+    RAh: SexaMeta
+        Right ascension (hour)
+
+    RAm: SexaMeta
+        Right ascension (minute)
+
+    RAs: SexaMeta
+        Right ascension (seconds)
+    """
     def __init__(self, number_sec_digits: int = 0):
         """Constructor.
-        :param number_sec_digits: number of digit in seconds
+
+        Parameters
+        ----------
+        number_sec_digits: int, optional
+            number of digit in seconds
         """
         self.RAh = SexaMeta("RAh", "Right ascension (hour)", "I2", "h")
         self.RAm = SexaMeta("RAm", "Right ascension (minute)", "I2", "min")
@@ -42,6 +82,22 @@ class SexaRA:
 
 
 class SexaDE:
+    """Declination columns set
+
+    Attributes
+    ----------
+    DEsign: SexaMeta
+        Declination sign
+
+    DEd: SexaMeta
+        Declination (degree)
+
+    DEm: SexaMeta
+        Declination (minute)
+
+    DEs: SexaMeta
+        Declination (seconds)
+    """
     def __init__(self, number_sec_digits: int):
         """Constructor.
         :param number_sec_digits: number of digit in seconds
@@ -58,8 +114,33 @@ class SexaDE:
 class CDSColumnFormatter:
     """CDS Column formatter interface
        with formats, size, min, max
+
+    Attributes
+    ----------
+    fortran_format: str
+        Columns format in FORTRAN style
+
+    format: str
+        Column Format
+
+    size: int
+        size use to print the values
+
+    min: any
+        min Column value
+
+    max: any
+        max Column value
+
+    out_format: str
+        format in Python style
+
+    none_format: str
+        format in Python style for None values (blanks}
     """
     def __init__(self):
+        """Constructor
+        """
         self.fortran_format = None
         self.format = None
         self.size = None
@@ -68,10 +149,17 @@ class CDSColumnFormatter:
         self.out_format = None
         self.none_format = None
 
-    def write(self, value: any):
+    def write(self, value: any) -> str:
         """write a value using the formatter
-        :param value: value in input
-        :return: the formatted value (for ASCII aligned serialization)
+
+        Parameters
+        ----------
+        value: any
+            value in input
+
+        Returns
+        -------
+        str (the formatted value for ASCII aligned serialization)
         """
         if isinstance(value, numpy.ma.core.MaskedConstant):
             return self.none_format.format("")
@@ -83,8 +171,14 @@ class CDSColumnIntegerFormatter(CDSColumnFormatter):
     """
     def __init__(self, column: Column, has_null: bool = False):
         """Constructor - build Format from an astropy column
-        :param column: astropy column
-        :param has_null: contain null values
+
+        Parameters
+        ----------
+        column: astropy.table.Column
+            Column in input
+
+        has_null: bool, optiona
+            contain null values (default is False)
         """
         CDSColumnFormatter.__init__(self)
         self.__set_slot(column, has_null)
@@ -119,8 +213,14 @@ class CDSColumnStringFormatter(CDSColumnFormatter):
     """
     def __init__(self, column: Column, has_null: bool):
         """Constructor - build Format from an astropy column
-        :param column: astropy column
-        :param has_null: contain null values
+
+        Parameters
+        ----------
+        column: astropy.table.Colum
+            astropy column in input
+
+        has_null: bool
+            contain null values
         """
         CDSColumnFormatter.__init__(self)
 
@@ -147,6 +247,25 @@ class FloatRepr:
        extract precision, width, format....
        The class can be used for a single value or a list of values (method consume()) to get the format
        of a single or a list
+
+    Attributes
+    ----------
+    type: int
+
+    sign: bool
+        Contain a sign
+
+    e_width: int
+        width in scientific format (%e)
+
+    e_precision: int
+        precision in scientific format (%e)
+
+    f_coma: int
+        with in float format (%f)
+
+    f_dec int
+        number of decimals in float format (%f)
     """
     SCI = 0
     DEC = 1
@@ -167,7 +286,11 @@ class FloatRepr:
 
     def consume(self, value: str):
         """set format from a value
-        :param value: (string) value to consume
+
+        Parameters
+        ----------
+        value: str
+            value to consume
         """
         mo = FloatRepr.REG_FLOAT.match(value)
         if mo is None: 
@@ -206,7 +329,10 @@ class FloatRepr:
 
     def width(self) -> int:
         """get size (when serialized in string)
-        :return: the size
+
+        Returns
+        -------
+        int
         """
         if self.type == FloatRepr.SCI:
             return self.e_width
@@ -219,7 +345,10 @@ class FloatRepr:
 
     def precision(self) -> int:
         """get precision
-        :return: precision
+
+        Returns
+        -------
+        int
         """
         if self.type == FloatRepr.SCI:
             return self.e_precision
@@ -230,6 +359,10 @@ class FloatRepr:
 
     def fortran_format(self) -> str:
         """return FORTRAN format style
+
+        Returns
+        -------
+        str
         """
         if self.type == FloatRepr.SCI:
             return f"E{self.width()}.{self.e_precision}"
@@ -240,6 +373,10 @@ class FloatRepr:
 
     def c_format(self) -> str:
         """return C Format style
+
+        Returns
+        -------
+        str
         """
         if self.type == FloatRepr.SCI:
             return f"{self.width()}.{self.e_precision}e"
@@ -254,8 +391,14 @@ class CDSColumnFloatFormatter(CDSColumnFormatter):
     """
     def __init__(self, column: Column, has_null: bool):
         """Constructor - build Format from an astropy column
-        :param column: astropy column
-        :param has_null: contain null values
+
+        Parameters
+        ----------
+        column: astropy.table.Column
+            astropy column in input
+
+        has_null: bool
+            contain null values
 
         Warning: compare float that can use (or not or sometimes)
                  scientific format (C-type %e or %f or %g)
@@ -301,8 +444,15 @@ class CDSColumnFloatFormatter(CDSColumnFormatter):
 
     def write(self, value: any):
         """write a value using the formatter
-        :param value: value in input
-        :return: the formatted value (for ASCII aligned serialization)
+
+        Parameters
+        ----------
+        value:
+            value in input
+
+        Returns
+        -------
+        str (the formatted value for ASCII aligned serialization)
         """
         if isinstance(value, numpy.ma.core.MaskedConstant):
             return self.none_format.format("")
@@ -345,10 +495,42 @@ class CDSColumnFloatFormatter(CDSColumnFormatter):
 
 class CDSColumn:
     """CDS Column decorator on astropy.table.Column
+
+    Attributes
+    ----------
+    name: str
+        Column name
+
+    size: int
+        Column size (when printed)
+
+    min:
+        Column min value
+
+    max:
+        Column max value
+
+    hasNull: bool
+        Contains null values
+
+    description: str
+        Column Description
+
+    unit: str
+        unit
+
+    note: str
+        add a Note to the Column
+
+    formatter: CDSColumnFormatter
     """
     def __init__(self, column: Column):
         """Constructor.
-        :param column: astropy Column
+
+        Parameters
+        ----------
+        column: astropy.table.Column
+            astropy Column in input
         """
         if not isinstance(column, Column):
             raise Exception("column must be astropy.table.Column")
@@ -361,6 +543,7 @@ class CDSColumn:
         self.description = "Description of " + self.name
         self.unit = UNDEFINED_UNIT
         self.formatter = None
+        self.note = None
 
         self.__dbname = column.name
         self.__column = column
@@ -369,7 +552,11 @@ class CDSColumn:
 
     def set_format(self, fmt: str):
         """force a format (fortran format)
-        :param fmt: the new format (ex:  %F10.6)
+
+        Parameters
+        ----------
+        fmt: str
+            the new format (ex:  %F10.6)
         """
         formatter = CDSColumnFormatter()
         formatter.fortran_format = fmt
@@ -409,7 +596,11 @@ class CDSColumn:
     def set_null_value(self, null_value: any):
         """Assign null value to the Column
         (create an astropy  MaskedColumn)
-        :param null_value: value
+
+        Parameters
+        ----------
+        null_value:
+            value
         """
         mask = []
         for value in self.__column:
@@ -494,29 +685,42 @@ class CDSColumn:
 
     def getName(self) -> str:
         """ get the name in input
-        :return: the name (which can be different that original Column.name)
+        (the name can be different that original Column.name)
+
+        Returns
+        -------
+        str
         """
         return self.__dbname
 
     def isSexa(self) -> bool:
         """Return True if the column is in sexagesimal
-        :return: True is Sexagesimal
+
+        Returns
+        -------
+        bool
         """
         if self.__sexagesimal[0] is None and self.__sexagesimal[1] is None:
             return False
         return True
 
-    def isSexaRA(self):
+    def isSexaRA(self) -> bool:
         """Return True if Right ascension
-        :return: True if Sexagesimal RA
+
+         Returns
+        -------
+        bool
         """
         if self.__sexagesimal[0] is not None:
             return True
         return False
 
-    def isSexaDE(self):
+    def isSexaDE(self) -> bool:
         """Return True if Declination
-        :return: True if sexagesimal declination
+
+        Returns
+        -------
+        bool
         """
         if self.__sexagesimal[1] is not None:
             return True
@@ -524,7 +728,11 @@ class CDSColumn:
 
     def setSexaRa(self, precision: int = 0):
         """set column as a Sexagesimal Right Ascension
-        :param precision: number of seconds decimals
+
+        Parameters
+        ----------
+        precision: int, optional
+            number of seconds decimals (default is 0)
         """
         self.parse()
 
@@ -541,7 +749,11 @@ class CDSColumn:
 
     def setSexaDe(self, precision: int = 0):
         """set column as a Sexagesimal Declination
-        :param precision: number of seconds decimals
+
+        Parameters
+        ----------
+        precision: int, optional
+            number of seconds decimals (default 0)
         """
         self.parse()
         if self.formatter.fortran_format[0] != 'A': raise Exception("bad sexagesimal format")
@@ -557,13 +769,19 @@ class CDSColumn:
 
     def getSexaRA(self):
         """get Sexagesimal  Right ascension
-        :return: SexaMeta information
+
+        Returns
+        -------
+        SexaMeta
         """
         return self.__sexagesimal[0]
 
     def getSexaDE(self):
         """get Sexagesimal DEclination
-        :return: SexaMeta information
+
+        Returns
+        -------
+        SexaMeta
         """
         return self.__sexagesimal[1]
 
@@ -588,7 +806,11 @@ class CDSColumn:
 
     def value(self, nrec: int) -> str:
         """get formatted value
-        :return: the value formatted (ready fo ASCII aligned format)
+        (the value formatted (ready fo ASCII aligned format))
+
+        Returns
+        -------
+        str
         """
         return self.formatter.write(self.__column[nrec])
 
