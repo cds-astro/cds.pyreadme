@@ -19,7 +19,8 @@ Anafile download: http://cdsarc.unistra.fr/ftp/sw/anafile.tar.gz
 Anafile documentation: http://cdsarc.unistra.fr/doc/anafile.htx
 
 ## Install
-python3 setup.py install --user
+<!--python3 setup.py install --user-->
+pip install .
 
 ## Examples
 ```python
