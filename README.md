@@ -19,8 +19,7 @@ Anafile download: http://cdsarc.unistra.fr/ftp/sw/anafile.tar.gz
 Anafile documentation: http://cdsarc.unistra.fr/doc/anafile.htx
 
 ## Install
-<!--python3 setup.py install --user-->
-pip install .
+python setup.py install 
 
 ## Examples
 ```python
@@ -38,6 +37,7 @@ tablemaker.title = "catalogue title"
 tablemaker.author = 'G.Landais'
 tablemaker.date = 2020
 tablemaker.abstract = "This is my abstract..."
+tablemaker.license = "CC0-1.0"
 tablemaker.more_description = "Additional information of the data context."
 tablemaker.putRef("II/246", "2mass catalogue")
 tablemaker.putRef("http://...", "external link")

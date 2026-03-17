@@ -766,7 +766,7 @@ class CDSTablesMaker:
          logging
     """
 
-    def __init__(self, debug: bool = False, outfolder: str = None):
+    def __init__(self, debug: bool = False, outfolder: str = None, license: str = ""):
         """Constructor
 
         Parameters
@@ -776,6 +776,8 @@ class CDSTablesMaker:
 
         outfolder: str, optional
             directory in output (default is current directory)
+
+        license: 'machine readble' license (see https://spdx.org/licenses Identifier)
         """
         self.__dir = os.path.dirname(os.path.realpath(__file__))
         self.__tables = []
@@ -795,6 +797,7 @@ class CDSTablesMaker:
         self.__template_value = None
         self.logger = logging.getLogger('CDSTablesMaker')
         self.__outfolder = outfolder
+        self.license = license
 
         if debug is True:
             logging.basicConfig(level=logging.DEBUG)
@@ -1265,7 +1268,9 @@ class CDSTablesMaker:
                          'tablesIndex': self.printTablesIndex(outBuffer=True),
                          'seealso': self.printRef(outBuffer=True),
                          'bytebybyte': '',
-                         'today': datetime.datetime.now().strftime("%d-%b-%Y")}
+                         'today': datetime.datetime.now().strftime("%d-%b-%Y"),
+                         'license': self.license
+                        }
 
         if self.__template_value is not None:
             for key in self.__template_value:

@@ -789,11 +789,12 @@ class CDSColumn:
         """Test null values in a numpy array
         """
         if isinstance(self.__column, MaskedColumn):
-            return True
-        #try:
-        #    n = len(self.__column[self.__column.argmin(fill_value=0)])
-        #except: #fail inf MaskedColumn
-        #    return True
+            masked_true = False
+            for e in self.__column.mask:
+                if e:
+                    masked_true = True
+                    break
+            return masked_true
         return False
 
     def __get_unit(self) -> str:
