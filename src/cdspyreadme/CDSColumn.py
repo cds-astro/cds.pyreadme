@@ -242,6 +242,24 @@ class CDSColumnStringFormatter(CDSColumnFormatter):
         self.none_format = self.out_format
 
 
+class Normalize:
+    """Normalize float in outpput with removing  extra '0'
+    """
+    NORMALIZE = False
+
+    def normalize_float(num: str) -> str:
+        """remove extra '0' and replace by ' '
+        """
+        if "." not in num:
+            return num
+        out = [i for i in num]
+        for i in reversed(range(len(num))):
+            if out[i] != '0':
+                break
+            out[i] = ' '
+        return "".join(out)
+
+
 class FloatRepr:
     """Float representation
        extract precision, width, format....
@@ -385,6 +403,43 @@ class FloatRepr:
         else:
             return f"{self.width()}.{self.f_coma}f"
 
+    def set_func_formatter(self) -> callable:
+        """set the formatter function
+
+        Returns
+        -------
+        callable
+        """
+        fmt = f"{self.width()}.{self.f_coma}f"
+        func_format =  "{0:"+fmt+"}"
+        func_sz_format =  "{0:<"+str(self.width())+"}"
+
+        def __dec_norm_format(x):
+            s = func_format.format(x)
+            return Normalize.normalize_float(s)
+
+        def _dec_format(x):
+            if Normalize.NORMALIZE:
+                return Normalize.normalize_float(func_format.format(x))
+            else:
+                return func_format.format(x)
+
+        def _sci_format(x):
+            return func_sz_format.format(x)
+
+        def mixed_format(x):
+            str_x = str(x)
+            if 'e' in str_x or 'E' in str_x:
+                return  _sci_format(x)
+            else:
+                return _dec_format(x)
+
+        if self.type == FloatRepr.DEC:
+            return _dec_format
+        elif self.type == FloatRepr.SCI:
+            return _sci_format
+        else:
+            return mixed_format
 
 class CDSColumnFloatFormatter(CDSColumnFormatter):
     """CDS column for float
@@ -423,6 +478,8 @@ class CDSColumnFloatFormatter(CDSColumnFormatter):
         self.size = fmt_saved.width()
         self.fortran_format = fmt_saved.fortran_format()
         self.format = fmt_saved.c_format()
+        self.call_format = fmt_saved.set_func_formatter()
+
 
         self.out_format = "{0:" + self.format + "}"
         self.none_format = "{0:" + str(self.size)+"s}"
@@ -458,7 +515,8 @@ class CDSColumnFloatFormatter(CDSColumnFormatter):
             return self.none_format.format("")
         if math.isnan(value):
             return self.none_format.format("")
-        return self.out_format.format(value)
+
+        return self.call_format(value)
 
 
 #class CDSColumnSexaRAFormatter(CDSColumnFormatter):
