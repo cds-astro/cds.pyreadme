@@ -480,7 +480,6 @@ class CDSColumnFloatFormatter(CDSColumnFormatter):
         self.format = fmt_saved.c_format()
         self.call_format = fmt_saved.set_func_formatter()
 
-
         self.out_format = "{0:" + self.format + "}"
         self.none_format = "{0:" + str(self.size)+"s}"
 
@@ -699,7 +698,10 @@ class CDSColumn:
         if type is int:
             self.formatter = CDSColumnIntegerFormatter(self.__column, self.hasNull)
         elif type is float:
-            self.formatter = CDSColumnFloatFormatter(self.__column, self.hasNull)
+            if self.__force_format:
+                self.formatter = self.__force_format
+            else:
+                self.formatter = CDSColumnFloatFormatter(self.__column, self.hasNull)
         else:
             self.formatter = CDSColumnStringFormatter(self.__column, self.hasNull)
 
