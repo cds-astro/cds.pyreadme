@@ -1256,6 +1256,11 @@ class CDSTablesMaker:
 
         Note: sys.stdout (default output in previous release) is accepted 
         """
+        # Ensure all columns are parsed to read units and descriptions
+        for table in self.__tables:
+            for col in table.get_column():
+                col.parse()
+
         template_value = {'catalogue': self.catalogue,
                          'title': self.__splitLine(self.title),
                          'author': self.author,
