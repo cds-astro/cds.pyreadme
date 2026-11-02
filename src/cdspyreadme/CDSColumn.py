@@ -193,15 +193,13 @@ class CDSColumnIntegerFormatter(CDSColumnFormatter):
         self.none_format = "{0:" + str(self.size) + "s}"
 
     def __set_slot(self, column: Column, has_null: bool):
-        if has_null:  # optimized (2x more speed)
-            mask_col = column  # MaskedColumn(column, mask=[col is None for col in column])
-            mask_col.fill_value = -999999
-            self.max = max(mask_col.filled())
-            if self.max == -999999:
+        if has_null:  
+            mask_col = column
+            self.max = max(mask_col)
+            if isinstance(self.max, numpy.ma.core.MaskedConstant):
                 self.max = None
-            mask_col.fill_value = +999999
-            self.min = min(mask_col.filled())
-            if self.min == 999999:
+            self.min = min(mask_col)
+            if isinstance(self.max, numpy.ma.core.MaskedConstant):
                 self.min = None
         else:
             self.max = max(column)

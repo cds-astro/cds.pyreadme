@@ -65,6 +65,7 @@ class CDSTable:
         self.nlines = None
         self.nullvalue = None
         self.init_meta_columns()
+        self.__are_columns_parsed = False
 
     def get_column(self, name: str = None) -> CDSColumn:
         """Get CDS meta columns
@@ -117,6 +118,18 @@ class CDSTable:
                 fo.write("\n")
         self.logger.debug(f"make CDS table {out_filename}")
 
+    def _parse_columns(self):
+        """parse columns to get statistics"""
+        if self.__are_columns_parsed:
+            return
+
+        for col in self.__cds_columns:
+            col.parse()
+            if self.nullvalue:
+                col.set_null_value(self.nullvalue)
+
+        self.__are_columns_parsed = True
+
     def makeCDSTable(self, append: bool = False, outfolder: str = None):
         """Make the standardized table in ASCII aligned format.
 
@@ -128,11 +141,7 @@ class CDSTable:
         outfolder: str, optional
             output directory (default current directory)
         """
-        for col in self.__cds_columns:
-            col.parse()
-            if self.nullvalue:
-                col.set_null_value(self.nullvalue)
-
+        self._parse_columns()
         self.__write_table(append, outfolder)
 
     def init_meta_columns(self):
@@ -1256,6 +1265,9 @@ class CDSTablesMaker:
 
         Note: sys.stdout (default output in previous release) is accepted 
         """
+        for table in self.__tables:
+            table._parse_columns()
+
         template_value = {'catalogue': self.catalogue,
                          'title': self.__splitLine(self.title),
                          'author': self.author,
@@ -1302,8 +1314,9 @@ class CDSTablesMaker:
         mrt_template = self.__dir + "/MRT.template"
 
         for table in self.__tables:
-            for col in table.get_column():
-                col.parse()
+            table._parse_columns()
+
+        for table in self.__tables:
             template_value['bytebybyte'] = self.__getByteByByteTemplate(table)
 
             out_filename = f"{self.__outfolder}/{table.name}" if self.__outfolder else table.name
